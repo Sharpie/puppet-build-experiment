@@ -36,3 +36,7 @@ jobs:
           export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
           env | grep VANAGON
           bundle exec build puppet-runtime debian-10-armhf -e docker
+      - uses: actions/upload-artifact@v1
+        with:
+          name: vanagon-output.tar
+          path: output

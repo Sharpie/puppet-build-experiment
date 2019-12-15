@@ -9,4 +9,5 @@ project 'puppet-runtime' do |proj|
   proj.no_packaging true
 
   proj.component 'puppet-runtime'
+  proj.fetch_artifact('/tmp/vanagon-puppet-runtime/puppet-runtime')
 end

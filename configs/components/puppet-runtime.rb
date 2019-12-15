@@ -31,4 +31,22 @@ component 'puppet-runtime' do |pkg, settings, platform|
   pkg.build do
     ["bundle exec build agent-runtime-master #{platform.name} -e local"]
   end
+
+  # This combines with projects/puppet-runtime.rb to copy the output/
+  # directory from the nested Vanagon build to output/puppet-runtime
+  #
+  # components/puppet-agent.rb then copies this into its build tree to
+  # create the following folder structure:
+  #
+  #   ├── puppet-agent/          <- puppet-agent package being built
+  #   └── puppet-runtime/output/ <- Components required to build puppet-agent
+  #
+  # This facilitates development as puppet-agent and puppet-runtime can be
+  # put in a directory by `git clone` and the relative path from the
+  # puppet-agent project to compiled components created by puppet-runtime
+  # is the same.
+  pkg.install do
+    ['mkdir -p /tmp/vanagon-puppet-runtime/puppet-runtime/',
+     'cp -r output /tmp/vanagon-puppet-runtime/puppet-runtime/']
+  end
 end
