@@ -2,4 +2,5 @@
 ext/
 Gemfile.lock
 Gemfile.local
+output/
 vanagon_hosts.log

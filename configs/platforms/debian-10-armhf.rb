@@ -13,6 +13,7 @@ platform "debian-10-armhf" do |plat|
     'build-essential',
     'git',
     'ruby',
+    'ruby-dev',
     'ruby-bundler',
     'rsync'
   ]
