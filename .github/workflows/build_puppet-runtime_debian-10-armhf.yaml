@@ -1,0 +1,38 @@
+---
+name: Build puppet-runtime for debain-10-armhf
+
+on:
+  # Manually triggered: https://developer.github.com/v3/activity/events/types/#repositorydispatchevent
+  repository_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    env:
+      VANAGON_BUILD_VERSION: '${{ github.event.client_payload.version }}'
+      VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64:latest'
+      VANAGON_SSH_PORT: 4222
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-ruby@v1.1.0
+        with:
+          ruby-version: '2.5.x'
+      - name: Provision build tools
+        run: |
+          sudo apt-get install -y qemu-user-static
+
+          gem install bundler
+          bundle install --path .bundle/lib
+
+          curl -O https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant
+          chmod 0600 vagrant
+
+          docker pull "${VANAGON_DOCKER_IMAGE}"
+      - name: Build puppet-runtime
+        run: |
+          export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
+          export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
+          env | grep VANAGON
+          bundle exec build puppet-runtime debian-10-armhf -e docker
