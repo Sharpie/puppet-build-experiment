@@ -1,0 +1,41 @@
+From 305fd4caa45d15a080464ead6f916e5e8d9cdd71 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 6 May 2019 21:53:23 -0700
+Subject: [PATCH 6/6] Skip yaml-cpp and boost for debian armhf
+
+Let's take a page out of the SLES 15 book and not build these beefy
+dependencies into the runtime for debian-9-armhf and debian-10-armhf.
+---
+ configs/projects/agent-runtime-6.4.x.rb  | 4 ++--
+ configs/projects/agent-runtime-master.rb | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/configs/projects/agent-runtime-6.4.x.rb b/configs/projects/agent-runtime-6.4.x.rb
+index 4f7b564..9880490 100644
+--- a/configs/projects/agent-runtime-6.4.x.rb
++++ b/configs/projects/agent-runtime-6.4.x.rb
+@@ -33,6 +33,6 @@ project 'agent-runtime-6.4.x' do |proj|
+   proj.component 'rubygem-hiera-eyaml'
+   proj.component 'rubygem-httpclient'
+   # SLES 15 uses the OS distro versions of boost and yaml-cpp:
+-  proj.component 'boost' unless platform.name =~ /sles-15/
+-  proj.component 'yaml-cpp' unless platform.name =~ /sles-15/
++  proj.component 'boost' unless platform.name =~ /sles-15|debian-(?:9|10)-armhf/
++  proj.component 'yaml-cpp' unless platform.name =~ /sles-15|debian-(?:9|10)-armhf/
+ end
+diff --git a/configs/projects/agent-runtime-master.rb b/configs/projects/agent-runtime-master.rb
+index e19b770..cc5b22b 100644
+--- a/configs/projects/agent-runtime-master.rb
++++ b/configs/projects/agent-runtime-master.rb
+@@ -34,6 +34,6 @@ project 'agent-runtime-master' do |proj|
+   proj.component 'rubygem-hiera-eyaml'
+   proj.component 'rubygem-httpclient'
+   # SLES 15 uses the OS distro versions of boost and yaml-cpp:
+-  proj.component 'boost' unless platform.name =~ /sles-15/
+-  proj.component 'yaml-cpp' unless platform.name =~ /sles-15/
++  proj.component 'boost' unless platform.name =~ /sles-15|debian-(?:9|10)-armhf/
++  proj.component 'yaml-cpp' unless platform.name =~ /sles-15|debian-(?:9|10)-armhf/
+ end
+-- 
+2.20.1 (Apple Git-117)
+

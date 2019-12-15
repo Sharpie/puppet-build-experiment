@@ -1,0 +1,5 @@
+.bundle
+ext/
+Gemfile.lock
+Gemfile.local
+vanagon_hosts.log

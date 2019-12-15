@@ -1,0 +1,28 @@
+From d7c6f746a3e5659c0fa0f477bda3f0450c925459 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 29 Apr 2019 22:00:36 -0700
+Subject: [PATCH 2/6] Skip runtime-agent for debian armhf
+
+This commit updates the runtime-agent component to be a no-op when built
+for the debian-9-armhf or debian-10-armhf platforms. This matches the
+behavior of other platforms that bring their own build toolchains.
+---
+ configs/components/runtime-agent.rb | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/configs/components/runtime-agent.rb b/configs/components/runtime-agent.rb
+index 61612a0..6ff75ed 100644
+--- a/configs/components/runtime-agent.rb
++++ b/configs/components/runtime-agent.rb
+@@ -25,6 +25,8 @@ component "runtime-agent" do |pkg, settings, platform|
+     pkg.install_file File.join(libdir, "libgcc_s.a"), "/opt/puppetlabs/puppet/lib/libgcc_s.a"
+   elsif platform.is_macos? || platform.name =~ /sles-15|fedora-(29|30)|el-8|debian-10/
+     # Nothing to see here
++  elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++    # Nothing to see here either
+   elsif platform.is_windows?
+     lib_type = platform.architecture == "x64" ? "seh" : "sjlj"
+     pkg.install_file "#{settings[:gcc_bindir]}/libgcc_s_#{lib_type}-1.dll", "#{settings[:bindir]}/libgcc_s_#{lib_type}-1.dll"
+-- 
+2.20.1 (Apple Git-117)
+
