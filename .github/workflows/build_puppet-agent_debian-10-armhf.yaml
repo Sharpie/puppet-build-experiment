@@ -1,5 +1,5 @@
 ---
-name: Build puppet-runtime for debain-10-armhf
+name: Build puppet-agent for debain-10-armhf
 
 on:
   # Manually triggered: https://developer.github.com/v3/activity/events/types/#repositorydispatchevent
@@ -9,9 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-18.04
     env:
-      VANAGON_BUILD_VERSION: '${{ github.event.client_payload.version }}'
+      PUPPET_AGENT_VERSION: '${{ github.event.client_payload.version }}'
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64:latest'
-      VANAGON_SSH_PORT: 4222
     steps:
       - uses: actions/checkout@v1
         with:
@@ -31,11 +30,27 @@ jobs:
 
           docker pull "${VANAGON_DOCKER_IMAGE}"
       - name: Build puppet-runtime
+        env:
+          VANAGON_SSH_PORT: 4222
         run: |
+          export VANAGON_BUILD_VERSION=$(curl -sSL "https://raw.githubusercontent.com/puppetlabs/puppet-agent/${PUPPET_AGENT_VERSION}/configs/components/puppet-runtime.json"|jq --raw-output '.version')
           export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
           export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
-          env | grep VANAGON
+
+          printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
+
           bundle exec build puppet-runtime debian-10-armhf -e docker
+      - name: Build puppet-agent
+        env:
+          VANAGON_SSH_PORT: 4223
+        run: |
+          export VANAGON_BUILD_VERSION="${PUPPET_AGENT_VERSION}"
+          export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
+          export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
+
+          printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
+
+          bundle exec build puppet-agent debian-10-armhf -e docker
       - uses: actions/upload-artifact@v1
         with:
           name: vanagon-output.tar
