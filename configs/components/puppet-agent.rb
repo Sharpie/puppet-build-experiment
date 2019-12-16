@@ -21,7 +21,7 @@ component 'puppet-agent' do |pkg, settings, platform|
 
     unless patch_set.nil?
       $stderr.puts("Applying patches for puppet-agent/#{platform.name}/#{patch_set}")
-      Dir.glob("resources/patches/puppet-agent/#{platform.name}/#{patch_set}/*.patch").each do |p|
+      Dir.glob("resources/patches/puppet-agent/#{platform.name}/#{patch_set}/*.patch").sort.each do |p|
         pkg.apply_patch p, fuzz: 2
       end
     end
