@@ -19,7 +19,7 @@ component 'puppet-runtime' do |pkg, settings, platform|
     unless patch_set.nil?
       $stderr.puts("Applying patches for puppet-runtime/#{platform.name}/#{patch_set}")
       Dir.glob("resources/patches/puppet-runtime/#{platform.name}/#{patch_set}/*.patch").each do |p|
-        pkg.apply_patch p
+        pkg.apply_patch p, fuzz: 2
       end
     end
   end
