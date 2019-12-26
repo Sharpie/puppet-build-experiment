@@ -11,6 +11,8 @@ platform "debian-10-armhf" do |plat|
 
   packages = [
     'build-essential',
+    'debhelper',
+    'devscripts',
     'git',
     'ruby',
     'ruby-dev',

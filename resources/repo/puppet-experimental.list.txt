@@ -1,0 +1,2 @@
+# Charlie's experimental puppet-agent builds __CODENAME__ Repository
+deb https://dl.bintray.com/sharpie/puppet-experimental-debs __CODENAME__ puppet-experimental
