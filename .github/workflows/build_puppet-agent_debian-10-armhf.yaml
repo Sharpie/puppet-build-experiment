@@ -18,6 +18,15 @@ jobs:
       - uses: actions/setup-ruby@v1.1.0
         with:
           ruby-version: '2.5.x'
+      - uses: jfrog/setup-jfrog-cli@v1
+      - name: Configure Bintray
+        env:
+          BT_API_KEY: '${{ secrets.BT_API_KEY }}'
+        run: |
+          jfrog bt config \
+            --interactive=false \
+            --user=sharpie \
+            --key="${BT_API_KEY}"
       - name: Provision build tools
         run: |
           sudo apt-get install -y qemu-user-static
@@ -40,6 +49,10 @@ jobs:
           printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
 
           bundle exec build puppet-runtime debian-10-armhf -e docker
+
+          jfrog bt upload --publish \
+            'output/puppet-runtime/output/agent-runtime-*' \
+            "sharpie/puppet-agent-bin/puppet-runtime/${VANAGON_BUILD_VERSION}"
       - name: Build puppet-agent
         env:
           VANAGON_SSH_PORT: 4223
