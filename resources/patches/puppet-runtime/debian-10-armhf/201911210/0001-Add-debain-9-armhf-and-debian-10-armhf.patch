@@ -1,0 +1,154 @@
+From 5b431ddee2582740b6456aea34a9b095b06f23f3 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sun, 28 Apr 2019 21:48:50 -0700
+Subject: [PATCH 1/7] Add debain-9-armhf and debian-10-armhf
+
+This commit adds armhf plaform definitions for Stretch and Buster based on
+debian-10-amd64 and Mike Stahnke's work in:
+
+  https://github.com/puppetlabs/puppet-agent/pull/1362
+---
+ configs/platforms/debian-10-armhf.rb       | 54 +++++++++++++++++++++
+ configs/platforms/debian-9-armhf.rb        | 55 ++++++++++++++++++++++
+ configs/projects/_shared-agent-settings.rb |  2 +-
+ 3 files changed, 110 insertions(+), 1 deletion(-)
+ create mode 100644 configs/platforms/debian-10-armhf.rb
+ create mode 100644 configs/platforms/debian-9-armhf.rb
+
+diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
+new file mode 100644
+index 0000000..4df8fc8
+--- /dev/null
++++ b/configs/platforms/debian-10-armhf.rb
+@@ -0,0 +1,54 @@
++platform "debian-10-armhf" do |plat|
++  plat.servicedir "/lib/systemd/system"
++  plat.defaultdir "/etc/default"
++  plat.servicetype "systemd"
++  plat.codename "buster"
++  plat.platform_triple "arm-linux-gnueabihf"
++
++  plat.install_build_dependencies_with "DEBIAN_FRONTEND=noninteractive; apt-get install -qy --no-install-recommends "
++
++  # STORY TIME: In order to keep on-disk sizes low, most docker containers
++  #             are configured to skip installation of man pages. This
++  #             generally works out fine except the post-install script
++  #             of `openjdk-11-jdk-headless` assumes noone would ever do
++  #             such a thing and fails.
++  plat.provision_with 'mkdir -p /usr/share/man/man1'
++  plat.provision_with "dpkg --add-architecture #{plat.get_architecture}"
++
++  packages = [
++    'cmake',
++    "crossbuild-essential-#{plat.get_architecture}",
++    'debhelper',
++    'devscripts',
++    'fakeroot',
++    "libc6-dev:#{plat.get_architecture}",
++    "libbz2-dev:#{plat.get_architecture}",
++    "libreadline-dev:#{plat.get_architecture}",
++    'make',
++    'openjdk-11-jdk-headless',
++    'pkg-config',
++    'quilt',
++    'rsync',
++    "zlib1g-dev:#{plat.get_architecture}",
++  ]
++  plat.provision_with "export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -qy --no-install-recommends #{packages.join(' ')}"
++
++  plat.cross_compiled "true"
++  plat.output_dir File.join("deb", plat.get_codename, "PC1")
++
++  plat.vmpooler_template "debian-10-x86_64"
++
++  # NOTE: Bring your own image. The image is expected to satisfy the following
++  #       conditions:
++  #
++  #         - Runs SystemD
++  #         - Runs SSHD under SystemD
++  #           - SSHD allows pubkey access to the root user via a
++  #             key set by the VANAGON_SSH_KEY environment variable.
++  plat.docker_image ENV['VANAGON_DOCKER_IMAGE']
++  plat.ssh_port 4222
++  plat.docker_run_args ['-t', # TTY makes SystemD messages available to `docker logs`
++                        '--tmpfs=/run',
++                        '--tmpfs=/run/lock',
++                        '--volume=/sys/fs/cgroup:/sys/fs/cgroup:ro']
++end
+diff --git a/configs/platforms/debian-9-armhf.rb b/configs/platforms/debian-9-armhf.rb
+new file mode 100644
+index 0000000..704ca2f
+--- /dev/null
++++ b/configs/platforms/debian-9-armhf.rb
+@@ -0,0 +1,55 @@
++platform "debian-9-armhf" do |plat|
++  plat.servicedir "/lib/systemd/system"
++  plat.defaultdir "/etc/default"
++  plat.servicetype "systemd"
++  plat.codename "stretch"
++  plat.platform_triple "arm-linux-gnueabihf"
++
++  plat.install_build_dependencies_with "DEBIAN_FRONTEND=noninteractive; apt-get install -qy --no-install-recommends "
++
++  # STORY TIME: In order to keep on-disk sizes low, most docker containers
++  #             are configured to skip installation of man pages. This
++  #             generally works out fine except the post-install script
++  #             of `openjdk-8-jdk-headless` assumes noone would ever do
++  #             such a thing and fails.
++  plat.provision_with 'mkdir -p /usr/share/man/man1'
++  plat.provision_with "dpkg --add-architecture #{plat.get_architecture}"
++
++  packages = [
++    'cmake',
++    "crossbuild-essential-#{plat.get_architecture}",
++    'debhelper',
++    'devscripts',
++    'fakeroot',
++    "libc6-dev:#{plat.get_architecture}",
++    "libbz2-dev:#{plat.get_architecture}",
++    "libreadline-dev:#{plat.get_architecture}",
++    'make',
++    'openjdk-8-jdk-headless',
++    'pkg-config',
++    'quilt',
++    'rsync',
++    "zlib1g-dev:#{plat.get_architecture}",
++  ]
++  plat.provision_with "export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -qy --no-install-recommends #{packages.join(' ')}"
++
++  plat.cross_compiled "true"
++  plat.output_dir File.join("deb", plat.get_codename, "PC1")
++
++  plat.vmpooler_template "debian-9-x86_64"
++
++  # NOTE: Bring your own image. The image is expected to satisfy the following
++  #       conditions:
++  #
++  #         - Runs SystemD
++  #         - Runs SSHD under SystemD
++  #           - SSHD allows pubkey access to the root user via a
++  #             key set by the VANAGON_SSH_KEY environment variable.
++  plat.docker_image ENV['VANAGON_DOCKER_IMAGE']
++  plat.ssh_port 4222
++  plat.docker_run_args ['--tmpfs=/tmp:exec',
++                        '--tmpfs=/run',
++                        '--volume=/sys/fs/cgroup:/sys/fs/cgroup:ro',
++                        # SystemD requires some elevated privilages.
++                        '--cap-add=SYS_ADMIN']
++end
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index ac1cff4..41688b2 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -99,7 +99,7 @@ platform_triple = "ppc64-redhat-linux" if platform.architecture == "ppc64"
+ platform_triple = "ppc64le-redhat-linux" if platform.architecture == "ppc64le"
+ platform_triple = "powerpc64le-suse-linux" if platform.architecture == "ppc64le" && platform.name =~ /^sles-/
+ platform_triple = "powerpc64le-linux-gnu" if platform.architecture == "ppc64el"
+-platform_triple = "arm-linux-gnueabihf" if platform.name == 'debian-8-armhf'
++platform_triple = "arm-linux-gnueabihf" if platform.name =~ /debian-\d+-armhf/
+ platform_triple = "arm-linux-gnueabi" if platform.name == 'debian-8-armel'
+ platform_triple = "aarch64-redhat-linux" if platform.name == 'el-7-aarch64'
+ 
+-- 
+2.25.0
+
