@@ -50,7 +50,7 @@ jobs:
 
           bundle exec build puppet-runtime debian-10-armhf -e docker
 
-          jfrog bt upload --publish \
+          jfrog bt upload --flat \
             'output/puppet-runtime/output/agent-runtime-*' \
             "sharpie/puppet-agent-bin/puppet-runtime/${VANAGON_BUILD_VERSION}" \
             "puppet-runtime/${VANAGON_BUILD_VERSION}/"
