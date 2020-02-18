@@ -1,0 +1,43 @@
+From 94494aab44b0d9e735023104fc4a17626c8e6cc3 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 11 May 2019 16:44:23 -0700
+Subject: [PATCH 09/12] Update cpp-pcp-client to build on debian armhf
+
+This commit updates the cpp-pcp-client component to build on the debian-9-armhf
+and debian-10-armhf platforms using Debian's cmake and to link against
+Debian's Boost libraries.
+---
+ configs/components/cpp-pcp-client.rb | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/configs/components/cpp-pcp-client.rb b/configs/components/cpp-pcp-client.rb
+index 918231c7..7b5099d1 100644
+--- a/configs/components/cpp-pcp-client.rb
++++ b/configs/components/cpp-pcp-client.rb
+@@ -29,6 +29,23 @@ component "cpp-pcp-client" do |pkg, settings, platform|
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF"
+     toolchain = ""
+     boost_static_flag = "-DBOOST_STATIC=OFF"
++  elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++    # Use system cmake and libraries
++    cmake = '/usr/bin/cmake'
++
++    # Env variables used by CMakeCross.txt to select the desired
++    # crossbuild-essential-<arch> toolchain.
++    pkg.environment('DEB_HOST_ARCH', platform.architecture)
++    pkg.environment('DEB_HOST_GNU_TYPE', platform.platform_triple)
++    toolchain = '-DCMAKE_TOOLCHAIN_FILE=/etc/dpkg-cross/cmake/CMakeCross.txt'
++
++    boost_static_flag = "-DBOOST_STATIC=OFF"
++    special_flags = ["-DBOOST_INCLUDEDIR=/usr/include",
++                     "-DBOOST_LIBRARYDIR=/usr/lib/#{platform.platform_triple}",
++                     "-DCMAKE_FIND_ROOT_PATH='/opt/puppetlabs/puppet;/usr'"]
++
++    special_flags += ["-DENABLE_CXX_WERROR=OFF"] if platform.name =~ /debian-10/
++    special_flags = special_flags.join(' ')
+   elsif platform.is_cross_compiled_linux?
+     cmake = "/opt/pl-build-tools/bin/cmake"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+-- 
+2.20.1 (Apple Git-117)
+
