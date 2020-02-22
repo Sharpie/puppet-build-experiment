@@ -54,10 +54,15 @@ jobs:
             printf 'Downloading puppet-runtime %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
             mkdir -p output/puppet-runtime/output
+            mkdir -p stage/puppet-runtime
 
             jfrog bt download-ver --flat --unpublished \
               "${BINTRAY_VERSION}" \
-              output/puppet-runtime/output
+              stage/puppet-runtime/
+
+            # --flat isn't having the desired effect as download-ver still
+            # re-creates the folder structure from BinTray
+            find stage/puppet-runtime -type f -exec mv -t output/puppet-runtime/output {} +
           else
             printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
 
@@ -79,10 +84,15 @@ jobs:
             printf 'Downloading puppet-agent %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
             mkdir -p output/deb/buster/PC1
+            mkdir stage/puppet-agent
 
             jfrog bt download-ver --flat --unpublished \
               "${BINTRAY_VERSION}" \
-              output/deb/buster/PC1
+              stage/puppet-agent/
+
+            # --flat isn't having the desired effect as download-ver still
+            # re-creates the folder structure from BinTray
+            find stage/puppet-agent -type f -exec mv -t output/deb/buster/PC1 {} +
           else
             printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
 
