@@ -108,3 +108,53 @@ jobs:
         with:
           name: vanagon-output.tar
           path: output
+
+
+  test-puppet-agent:
+    runs-on: ubuntu-18.04
+    needs: build
+    env:
+      VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
+      TEST_REPO: 'https://github.com/puppetlabs/puppet-agent'
+      TEST_COMPONENT: puppet-agent
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-ruby@v1.1.0
+        with:
+          ruby-version: '2.5.x'
+      - uses: actions/download-artifact@v1
+        with:
+          name: vanagon-output.tar
+          path: output
+      - name: Provision test environment
+        run: |
+          sudo apt-get install -y qemu-user-static
+          gem install bundler
+          docker pull "${VANAGON_DOCKER_IMAGE}"
+
+          test_package=$(find "${GITHUB_WORKSPACE}/output" -type f -name 'puppet-agent_*.deb')
+          printf '::set-env name=TEST_PUPPET_PACKAGE::%s\n' "${test_package}"
+
+          test_version="${PUPPET_AGENT_VERSION}"
+          git clone "${TEST_REPO}" "${TEST_COMPONENT}"
+
+          cd "${TEST_COMPONENT}"
+          git checkout "${test_version}"
+
+          cd acceptance
+          printf 'gem "beaker-docker", "~> 0.7.0"\n' > Gemfile.local
+          bundle config set path '.bundle/lib'
+          bundle install
+
+          find .bundle -path '*/aio/010_Install_Puppet_Agent.rb' \
+            -exec cp "${GITHUB_WORKSPACE}/resources/test/puppet-agent/010_Install_Puppet_Agent.rb" {} \;
+      - name: Run acceptance test
+        run: |
+          export SHA="${PUPPET_AGENT_VERSION}"
+          export BEAKER_HOSTS="${GITHUB_WORKSPACE}/resources/test/puppet-agent/raspbian-10-armhf.yaml"
+
+          cd "${TEST_COMPONENT}/acceptance"
+          bundle exec rake 'ci:test:aio[true]'
+
