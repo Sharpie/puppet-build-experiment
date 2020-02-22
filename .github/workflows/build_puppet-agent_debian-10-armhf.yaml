@@ -5,11 +5,13 @@ on:
   # Manually triggered: https://developer.github.com/v3/activity/events/types/#repositorydispatchevent
   repository_dispatch:
 
+env:
+  PUPPET_AGENT_VERSION: '${{ github.event.client_payload.version }}'
+
 jobs:
   build:
     runs-on: ubuntu-18.04
     env:
-      PUPPET_AGENT_VERSION: '${{ github.event.client_payload.version }}'
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64:latest'
     steps:
       - uses: actions/checkout@v1
@@ -27,7 +29,7 @@ jobs:
             --interactive=false \
             --user=sharpie \
             --key="${BT_API_KEY}"
-      - name: Provision build tools
+      - name: Provision build environment
         run: |
           sudo apt-get install -y qemu-user-static
 
@@ -36,15 +38,16 @@ jobs:
 
           curl -O https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant
           chmod 0600 vagrant
+          printf "::set-env name=VANAGON_SSH_KEY::${GITHUB_WORKSPACE}/vagrant\n"
 
           docker pull "${VANAGON_DOCKER_IMAGE}"
+          docker_run_args=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
+          printf "::set-env name=VANAGON_DOCKER_RUN_ARGS::${docker_run_args}\n"
       - name: Build puppet-runtime
         env:
           VANAGON_SSH_PORT: 4222
         run: |
-          export VANAGON_BUILD_VERSION=$(curl -sSL "https://raw.githubusercontent.com/puppetlabs/puppet-agent/${PUPPET_AGENT_VERSION}/configs/components/puppet-runtime.json"|jq --raw-output '.version')
-          export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
-          export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
+          export VANAGON_BUILD_VERSION=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
 
           printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
 
@@ -59,8 +62,6 @@ jobs:
           VANAGON_SSH_PORT: 4223
         run: |
           export VANAGON_BUILD_VERSION="${PUPPET_AGENT_VERSION}"
-          export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
-          export VANAGON_SSH_KEY="${GITHUB_WORKSPACE}/vagrant"
 
           printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
 
