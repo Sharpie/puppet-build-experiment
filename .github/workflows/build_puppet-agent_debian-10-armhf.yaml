@@ -48,24 +48,52 @@ jobs:
           VANAGON_SSH_PORT: 4222
         run: |
           export VANAGON_BUILD_VERSION=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
+          BINTRAY_VERSION="sharpie/puppet-agent-bin/puppet-runtime/${VANAGON_BUILD_VERSION}"
 
-          printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
+          if jfrog bt version-show "${BINTRAY_VERSION}"; then
+            printf 'Downloading puppet-runtime %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
-          bundle exec build puppet-runtime debian-10-armhf -e docker
+            mkdir -p output/puppet-runtime/output
 
-          jfrog bt upload --flat \
-            'output/puppet-runtime/output/agent-runtime-*' \
-            "sharpie/puppet-agent-bin/puppet-runtime/${VANAGON_BUILD_VERSION}" \
-            "puppet-runtime/${VANAGON_BUILD_VERSION}/"
+            jfrog bt download-ver --flat --unpublished \
+              "${BINTRAY_VERSION}" \
+              output/puppet-runtime/output
+          else
+            printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
+
+            bundle exec build puppet-runtime debian-10-armhf -e docker
+
+            jfrog bt upload --flat \
+              'output/puppet-runtime/output/agent-runtime-*' \
+              "${BINTRAY_VERSION}" \
+              "puppet-runtime/${VANAGON_BUILD_VERSION}/"
+          fi
       - name: Build puppet-agent
         env:
           VANAGON_SSH_PORT: 4223
         run: |
           export VANAGON_BUILD_VERSION="${PUPPET_AGENT_VERSION}"
+          BINTRAY_VERSION="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
-          printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
+          if jfrog bt version-show "${BINTRAY_VERSION}"; then
+            printf 'Downloading puppet-agent %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
-          bundle exec build puppet-agent debian-10-armhf -e docker
+            mkdir -p output/deb/buster/PC1
+
+            jfrog bt download-ver --flat --unpublished \
+              "${BINTRAY_VERSION}" \
+              output/deb/buster/PC1
+          else
+            printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
+
+            bundle exec build puppet-agent debian-10-armhf -e docker
+
+            jfrog bt upload --flat \
+              --deb buster/puppet-experimental/armhf \
+              'output/deb/buster/PC1/*.deb' \
+              "${BINTRAY_VERSION}" \
+              "pool/buster/puppet-experimental/p/puppet-agent/"
+          fi
       - uses: actions/upload-artifact@v1
         with:
           name: vanagon-output.tar
