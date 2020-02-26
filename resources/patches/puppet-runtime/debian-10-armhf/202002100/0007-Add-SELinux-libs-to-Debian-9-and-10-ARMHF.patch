@@ -1,0 +1,90 @@
+From 4ba5c79bd94e5eac00502befc97b4a85d4c0850a Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 17 Feb 2020 15:27:54 -0800
+Subject: [PATCH 7/8] Add SELinux libs to Debian 9 and 10 ARMHF
+
+This commit adds libraries and build dependencies required to support
+SELinux binaries on Debian. These were added upstream after puppet-agent
+release 6.11.1:
+
+https://github.com/puppetlabs/puppet-runtime/commit/cedb968
+---
+ configs/components/_base-ruby-augeas.rb  | 4 ++++
+ configs/components/_base-ruby-selinux.rb | 6 ++++++
+ configs/platforms/debian-10-armhf.rb     | 2 ++
+ configs/platforms/debian-9-armhf.rb      | 2 ++
+ 4 files changed, 14 insertions(+)
+
+diff --git a/configs/components/_base-ruby-augeas.rb b/configs/components/_base-ruby-augeas.rb
+index d669efd..5e7d6da 100644
+--- a/configs/components/_base-ruby-augeas.rb
++++ b/configs/components/_base-ruby-augeas.rb
+@@ -37,6 +37,10 @@ elsif platform.is_cross_compiled_linux?
+   pkg.environment "RUBY", host_ruby
+   ruby = "#{host_ruby} -r#{settings[:datadir]}/doc/rbconfig-#{ruby_version}-orig.rb"
+   pkg.environment "LDFLAGS", settings[:ldflags]
++  if ( platform.name =~ /debian-(?:9|10)/ )
++    # Pick up SELinux configuration from ARM packages.
++    pkg.environment "PKG_CONFIG_PATH", "#{File.join(settings[:libdir], 'pkgconfig')}:/usr/lib/#{settings[:platform_triple]}/pkgconfig"
++  end
+ else
+   ruby = File.join(ruby_bindir, 'ruby')
+ end
+diff --git a/configs/components/_base-ruby-selinux.rb b/configs/components/_base-ruby-selinux.rb
+index 31965fe..9c3e448 100644
+--- a/configs/components/_base-ruby-selinux.rb
++++ b/configs/components/_base-ruby-selinux.rb
+@@ -54,6 +54,12 @@ unless platform.name =~ /el-(5|6|7)|fedora-28|debian-(8|9)|ubuntu-(16|18)/
+   cflags += "#{settings[:cppflags]} #{settings[:cflags]}"
+ end
+ 
++# Debian 9 and 10 use cross-build-essential instead of pl-build-tools
++if platform.is_cross_compiled_linux? && ( platform.name =~ /debian-(?:9|10)/ )
++  cc = "/usr/bin/#{settings[:platform_triple]}-gcc"
++  system_include = "-I/usr/include"
++end
++
+ pkg.build do
+   [
+     "export RUBYHDRDIR=$(shell #{ruby} -e 'puts RbConfig::CONFIG[\"rubyhdrdir\"]')",
+diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
+index 96d695c..87a277c 100644
+--- a/configs/platforms/debian-10-armhf.rb
++++ b/configs/platforms/debian-10-armhf.rb
+@@ -24,12 +24,14 @@ platform "debian-10-armhf" do |plat|
+     "libc6-dev:#{plat.get_architecture}",
+     "libbz2-dev:#{plat.get_architecture}",
+     "libreadline-dev:#{plat.get_architecture}",
++    "libselinux1-dev:#{plat.get_architecture}",
+     'make',
+     'openjdk-11-jdk-headless',
+     'pkg-config',
+     'qemu-user-static',
+     'quilt',
+     'rsync',
++    'swig',
+     "zlib1g-dev:#{plat.get_architecture}",
+   ]
+   plat.provision_with "export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -qy --no-install-recommends #{packages.join(' ')}"
+diff --git a/configs/platforms/debian-9-armhf.rb b/configs/platforms/debian-9-armhf.rb
+index b575870..dd45143 100644
+--- a/configs/platforms/debian-9-armhf.rb
++++ b/configs/platforms/debian-9-armhf.rb
+@@ -24,12 +24,14 @@ platform "debian-9-armhf" do |plat|
+     "libc6-dev:#{plat.get_architecture}",
+     "libbz2-dev:#{plat.get_architecture}",
+     "libreadline-dev:#{plat.get_architecture}",
++    "libselinux1-dev:#{plat.get_architecture}",
+     'make',
+     'openjdk-8-jdk-headless',
+     'pkg-config',
+     'qemu-user-static',
+     'quilt',
+     'rsync',
++    'swig',
+     "zlib1g-dev:#{plat.get_architecture}",
+   ]
+   plat.provision_with "export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -qy --no-install-recommends #{packages.join(' ')}"
+-- 
+2.25.0
+

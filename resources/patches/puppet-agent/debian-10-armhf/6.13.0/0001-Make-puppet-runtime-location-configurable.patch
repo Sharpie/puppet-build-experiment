@@ -1,0 +1,33 @@
+From 9d09990ac97d4f9aab94ec992a9074bc91bb6436 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 2 Jul 2019 21:43:49 -0700
+Subject: [PATCH 01/13] Make puppet-runtime location configurable
+
+This commit updates the configuration of the puppet-agent project
+to consult the `PUPPET_RUNTIME_LOCATION` environment variable and
+use it as an override for the location set in `components/puppet-runtime.json`
+if set. This enables 3rd-party builds of `puppet-runtime` to be pulled from
+a location outside the Puppet build servers.
+---
+ configs/projects/puppet-agent.rb | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/configs/projects/puppet-agent.rb b/configs/projects/puppet-agent.rb
+index 1b3245da..9f2348c6 100644
+--- a/configs/projects/puppet-agent.rb
++++ b/configs/projects/puppet-agent.rb
+@@ -6,6 +6,11 @@ project "puppet-agent" do |proj|
+   # - Settings included in this file should apply only to local components in this repository.
+   runtime_details = JSON.parse(File.read('configs/components/puppet-runtime.json'))
+ 
++  if ENV.key?('PUPPET_RUNTIME_LOCATION')
++    # Override location in puppet-runtime.json if desired
++    runtime_details['location'] = ENV['PUPPET_RUNTIME_LOCATION']
++  end
++
+   settings[:puppet_runtime_version] = runtime_details['version']
+   settings[:puppet_runtime_location] = runtime_details['location']
+   settings[:puppet_runtime_basename] = "agent-runtime-master-#{runtime_details['version']}.#{platform.name}"
+-- 
+2.25.0
+
