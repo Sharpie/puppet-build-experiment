@@ -246,18 +246,18 @@ jobs:
           BT_GPG_KEY: '${{ secrets.BT_GPG_KEY }}'
         run: |
           runtime_version=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
-          runtime_version="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${runtime_version}"
-          agent_version="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
+          runtime_release="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${runtime_version}"
+          agent_release="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
 
           # This is done manually as the JFrog CLI cannot pass GPG passwords
           # to version-publish. The password is required to sign repository
           # metadata.
           curl -X POST \
             -u "sharpie:${BT_API_KEY}" \
-            "https://api.bintray.com/content/${runtime_version}/publish"
+            "https://api.bintray.com/content/${runtime_release}/publish"
 
           curl -X POST \
             -u "sharpie:${BT_API_KEY}" \
             -H "X-GPG-PASSPHRASE: ${BT_GPG_KEY}" \
-            "https://api.bintray.com/content/${agent_version}/publish"
+            "https://api.bintray.com/content/${agent_release}/publish"
 
