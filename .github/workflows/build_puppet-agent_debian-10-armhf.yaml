@@ -31,7 +31,8 @@ jobs:
             --key="${BT_API_KEY}"
       - name: Provision build environment
         run: |
-          sudo apt-get install -y qemu-user-static
+          sudo apt update
+          sudo apt install -y qemu-user-static
 
           gem install bundler
           bundle install --path .bundle/lib
@@ -130,7 +131,8 @@ jobs:
           path: output
       - name: Provision test environment
         run: |
-          sudo apt-get install -y qemu-user-static
+          sudo apt update
+          sudo apt install -y qemu-user-static
           gem install bundler
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
@@ -179,7 +181,8 @@ jobs:
           path: output
       - name: Provision test environment
         run: |
-          sudo apt-get install -y qemu-user-static
+          sudo apt update
+          sudo apt install -y qemu-user-static
           gem install bundler
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
