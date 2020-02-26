@@ -48,7 +48,7 @@ jobs:
           VANAGON_SSH_PORT: 4222
         run: |
           export VANAGON_BUILD_VERSION=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
-          BINTRAY_VERSION="sharpie/puppet-agent-bin/puppet-runtime/${VANAGON_BUILD_VERSION}"
+          BINTRAY_VERSION="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
           if jfrog bt version-show "${BINTRAY_VERSION}"; then
             printf 'Downloading puppet-runtime %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
@@ -231,17 +231,30 @@ jobs:
       - test-puppet-agent
       - test-facter
     steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-ruby@v1.1.0
+        with:
+          ruby-version: '2.5.x'
       - name: Ship puppet-agent
         env:
           BT_API_KEY: '${{ secrets.BT_API_KEY }}'
           BT_GPG_KEY: '${{ secrets.BT_GPG_KEY }}'
         run: |
-          BINTRAY_VERSION="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
+          runtime_version=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
+          runtime_version="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${runtime_version}"
+          agent_version="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
 
           # This is done manually as the JFrog CLI cannot pass GPG passwords
           # to version-publish. The password is required to sign repository
           # metadata.
           curl -X POST \
             -u "sharpie:${BT_API_KEY}" \
+            "https://api.bintray.com/content/${runtime_version}/publish"
+
+          curl -X POST \
+            -u "sharpie:${BT_API_KEY}" \
             -H "X-GPG-PASSPHRASE: ${BT_GPG_KEY}" \
-            "https://api.bintray.com/content/${BINTRAY_VERSION}/publish"
+            "https://api.bintray.com/content/${agent_version}/publish"
+
