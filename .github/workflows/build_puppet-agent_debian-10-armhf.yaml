@@ -224,3 +224,24 @@ jobs:
 
           bundle exec rake 'ci:test:aio[true]'
 
+
+  ship:
+    runs-on: ubuntu-18.04
+    needs:
+      - test-puppet-agent
+      - test-facter
+    steps:
+      - name: Ship puppet-agent
+        env:
+          BT_API_KEY: '${{ secrets.BT_API_KEY }}'
+          BT_GPG_KEY: '${{ secrets.BT_GPG_KEY }}'
+        run: |
+          BINTRAY_VERSION="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
+
+          # This is done manually as the JFrog CLI cannot pass GPG passwords
+          # to version-publish. The password is required to sign repository
+          # metadata.
+          curl -X POST \
+            -u "sharpie:${BT_API_KEY}" \
+            -H "X-GPG-PASSPHRASE: ${BT_GPG_KEY}" \
+            "https://api.bintray.com/content/${BINTRAY_VERSION}/publish"
