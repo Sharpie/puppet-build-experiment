@@ -159,6 +159,14 @@ jobs:
           export BEAKER_HOSTS="${GITHUB_WORKSPACE}/resources/test/puppet-agent/raspbian-10-armhf.yaml"
 
           cd "${TEST_COMPONENT}/acceptance"
+
+          # Filter test cases that are expected to fail.
+          #
+          # ensure_puppet_facts_can_use_facter_ng.rb: facter-ng doesn't know what to make of Raspbian
+          export TESTS=$(find tests -type f \
+                           -not -path tests/ensure_puppet_facts_can_use_facter_ng.rb \
+                         | paste -s -d, -)
+
           bundle exec rake 'ci:test:aio[true]'
 
 
