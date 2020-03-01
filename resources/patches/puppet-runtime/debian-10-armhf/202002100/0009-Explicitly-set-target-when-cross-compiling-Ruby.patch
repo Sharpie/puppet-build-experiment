@@ -1,0 +1,47 @@
+From 99c9362faad78e6a3008dbe893fd53208460d7cc Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 29 Feb 2020 19:00:09 -0800
+Subject: [PATCH 9/9] Explicitly set target when cross-compiling Ruby
+
+This patch updates the cross-compiled Ruby build for armhf to
+explicitly set the `--target` flag during configuration. This
+prevents Ruby's configure script from stripping the `gnu`
+suffix from the triplet, which in turn prevents RubyGems from
+"loosing" gems with compile extensions installed prior to an
+upgrade to RubyGems 3.1.0 or newer.
+
+Ref. https://github.com/rubygems/rubygems/pull/2922
+Ref. https://github.com/ruby/ruby/commit/52911974f8f1a9d975d63ad606f5a7ebc5b19c01
+---
+ configs/components/ruby-2.5.7.rb | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/configs/components/ruby-2.5.7.rb b/configs/components/ruby-2.5.7.rb
+index b7a9451..465844f 100644
+--- a/configs/components/ruby-2.5.7.rb
++++ b/configs/components/ruby-2.5.7.rb
+@@ -91,6 +91,12 @@ component 'ruby-2.5.7' do |pkg, settings, platform|
+     # This normalizes the build string to something like AIX 7.1.0.0 rather
+     # than AIX 7.1.0.2 or something
+     special_flags += " --build=#{settings[:platform_triple]} "
++  elsif platform.is_cross_compiled? && (platform.name =~ /debian-(?:9|10)/)
++    # Explicitly pass target to prevent Ruby's config script from stripping
++    # the gnu suffix in the architecture triplet. This stripping breaks gems
++    # with compiled extensions if the user updates to RubyGems 3.1.0+ after
++    # the gem is installed.
++    special_flags += " --target=#{settings[:platform_triple]} "
+   elsif platform.is_cross_compiled_linux?
+     special_flags += " --with-baseruby=#{host_ruby} "
+   elsif platform.is_solaris? && platform.architecture == "sparc"
+@@ -177,8 +183,6 @@ component 'ruby-2.5.7' do |pkg, settings, platform|
+     'sparc-sun-solaris2.10' => 'sparc-solaris2.10',
+     'i386-pc-solaris2.11' => 'i386-solaris2.11',
+     'sparc-sun-solaris2.11' => 'sparc-solaris2.11',
+-    'arm-linux-gnueabihf' => 'arm-linux-eabihf',
+-    'arm-linux-gnueabi' => 'arm-linux-eabi',
+     'x86_64-w64-mingw32' => 'x64-mingw32',
+     'i686-w64-mingw32' => 'i386-mingw32'
+   }
+-- 
+2.25.0
+
