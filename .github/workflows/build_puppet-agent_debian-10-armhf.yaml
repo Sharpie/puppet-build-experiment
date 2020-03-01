@@ -7,6 +7,7 @@ on:
 
 env:
   PUPPET_AGENT_VERSION: '${{ github.event.client_payload.version }}'
+  REBUILD: '${{ github.event.client_payload.rebuild }}'
 
 jobs:
   build:
@@ -51,7 +52,7 @@ jobs:
           export VANAGON_BUILD_VERSION=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
           BINTRAY_VERSION="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
-          if jfrog bt version-show "${BINTRAY_VERSION}"; then
+          if [[ -z "${REBUILD}" ]] && jfrog bt version-show "${BINTRAY_VERSION}"; then
             printf 'Downloading puppet-runtime %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
             mkdir -p output/puppet-runtime/output
@@ -81,7 +82,7 @@ jobs:
           export VANAGON_BUILD_VERSION="${PUPPET_AGENT_VERSION}"
           BINTRAY_VERSION="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
-          if jfrog bt version-show "${BINTRAY_VERSION}"; then
+          if [[ -z "${REBUILD}" ]] && jfrog bt version-show "${BINTRAY_VERSION}"; then
             printf 'Downloading puppet-agent %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
 
             mkdir -p output/deb/buster/PC1
