@@ -1,0 +1,49 @@
+From 81a6e88a627128b73cd64cd3bf7eb3ed955f5cce Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 29 Apr 2019 22:04:10 -0700
+Subject: [PATCH 3/9] Update openssl-1.1.1 for debian armhf
+
+This commit updates the openssl-1.1.1 component to build on debian-9-armhf
+and debian-10-armhf using native tooling. Small refactoring done to
+allow logic to be shared with debian-8-armhf where appropriate.
+---
+ configs/components/openssl-1.1.1.rb | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/configs/components/openssl-1.1.1.rb b/configs/components/openssl-1.1.1.rb
+index 4d057de..4cac7a7 100644
+--- a/configs/components/openssl-1.1.1.rb
++++ b/configs/components/openssl-1.1.1.rb
+@@ -27,8 +27,15 @@ component 'openssl' do |pkg, settings, platform|
+     cflags = settings[:cflags]
+     ldflags = settings[:ldflags]
+   elsif platform.is_cross_compiled_linux?
+-    pkg.environment 'PATH', "/opt/pl-build-tools/bin:$$PATH"
+-    pkg.environment 'CC', "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
++    if platform.name =~ /debian-(?:9|10)/
++      # Debian 9 and newer do not use pl-gcc
++      pkg.environment "CC", "/usr/bin/#{platform.platform_triple}-gcc"
++      ldflags = "-Wl,-rpath=#{settings[:libdir]}"
++    else
++      pkg.environment 'PATH', "/opt/pl-build-tools/bin:$$PATH"
++      pkg.environment 'CC', "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
++      ldflags = "-Wl,-rpath=/opt/pl-build-tools/#{settings[:platform_triple]}/lib -Wl,-rpath=#{settings[:libdir]} -L/opt/pl-build-tools/#{settings[:platform_triple]}/lib"
++    end
+ 
+     cflags = "#{settings[:cflags]} -fPIC"
+     if platform.architecture =~ /aarch/
+@@ -37,10 +44,9 @@ component 'openssl' do |pkg, settings, platform|
+       cflags += " -O2"
+     end
+ 
+-    ldflags = "-Wl,-rpath=/opt/pl-build-tools/#{settings[:platform_triple]}/lib -Wl,-rpath=#{settings[:libdir]} -L/opt/pl-build-tools/#{settings[:platform_triple]}/lib"
+     target = if platform.architecture == 'aarch64'
+                 'linux-aarch64'
+-              elsif platform.name =~ /debian-8-arm/
++              elsif platform.name =~ /debian-\d+-arm/
+                 'linux-armv4'
+               elsif platform.architecture =~ /ppc64le|ppc64el/ # Little-endian
+                 'linux-ppc64le'
+-- 
+2.26.2
+

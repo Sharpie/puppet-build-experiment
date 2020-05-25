@@ -1,0 +1,42 @@
+From 047fa17230685a137ba9b07451d476f109a83143 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 2 Jul 2019 22:04:15 -0700
+Subject: [PATCH 04/13] Skip Facter Java binding on debian armhf
+
+This commit updates the Facter component to skip building the
+Java integration for Puppet Server when cross-compiling for
+debian-9-armhf or debian-10-armhf.
+---
+ configs/components/facter.rb | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/configs/components/facter.rb b/configs/components/facter.rb
+index 70acee25..f4da0dd9 100644
+--- a/configs/components/facter.rb
++++ b/configs/components/facter.rb
+@@ -46,11 +46,18 @@ component "facter" do |pkg, settings, platform|
+     pkg.build_requires 'openjdk-7-jdk'
+     java_home = "/usr/lib/jvm/java-7-openjdk-#{platform.architecture}"
+   when /(debian-9|ubuntu-(15|16|18))/
+-    pkg.build_requires 'openjdk-8-jdk'
+-    java_home = "/usr/lib/jvm/java-8-openjdk-#{platform.architecture}"
++    # NOTE: Currently, we don't build Puppet Server for cross-compiled Linux,
++    #       so no need for facter.jar.
++    unless platform.is_cross_compiled_linux?
++      pkg.build_requires 'openjdk-8-jdk'
++      java_home = "/usr/lib/jvm/java-8-openjdk-#{platform.architecture}"
++    end
+   when /debian-10/
+-    pkg.build_requires 'openjdk-11-jdk'
+-    java_home = "/usr/lib/jvm/java-11-openjdk-#{platform.architecture}"
++    # See NOTE for debian-9
++    unless platform.is_cross_compiled_linux?
++      pkg.build_requires 'openjdk-11-jdk'
++      java_home = "/usr/lib/jvm/java-11-openjdk-#{platform.architecture}"
++    end
+   when /sles-12/
+     pkg.build_requires 'java-1_7_0-openjdk-devel'
+     java_home = "/usr/lib64/jvm/java-1.7.0-openjdk"
+-- 
+2.26.2
+
