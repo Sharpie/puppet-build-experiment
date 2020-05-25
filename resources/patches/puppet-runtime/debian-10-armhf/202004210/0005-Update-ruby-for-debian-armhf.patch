@@ -1,0 +1,117 @@
+From eae8736098e4363640530a9319a264c0123c634b Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 6 May 2019 20:12:32 -0700
+Subject: [PATCH 05/10] Update ruby for debian armhf
+
+This commit updates the ruby components to build on the debian-9-armhf
+and debian-10-armhf platforms by cutting dependencies on the following
+components from `pl-build-tools-vanagon`:
+
+  - `pl-ruby`
+  - `runtime-armhf`
+  - `pl-gcc-armhf`
+
+This avoids the `pl-ruby` dependency by using the newly-built Ruby to
+run tests and gem installations via QEMU.
+
+DTrace support is also skipped as it does not work correctly when
+cross compiling.
+---
+ configs/components/_base-ruby.rb           | 6 +++++-
+ configs/components/ruby-2.5.8.rb           | 4 +++-
+ configs/platforms/debian-10-armhf.rb       | 1 +
+ configs/platforms/debian-9-armhf.rb        | 1 +
+ configs/projects/_shared-agent-settings.rb | 7 +++++++
+ 5 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/configs/components/_base-ruby.rb b/configs/components/_base-ruby.rb
+index 5ad3ad7..a45e063 100644
+--- a/configs/components/_base-ruby.rb
++++ b/configs/components/_base-ruby.rb
+@@ -34,6 +34,10 @@ elsif platform.is_solaris?
+     # This doesn't work and halts the configure process. Set CONFIG_SHELL to force use of bash:
+     pkg.environment 'CONFIG_SHELL', '/bin/bash'
+   end
++elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++  # No-op. We install crossbuild-essential-<arch> and let --host <platform triple> do the
++  # right thing.
++  # FIXME: Should be a flag like platform.use_pl_build_tools? to signal this.
+ elsif platform.is_cross_compiled_linux? || platform.is_solaris?
+   pkg.environment 'PATH', "#{settings[:bindir]}:$$PATH"
+   pkg.environment 'CC', "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
+@@ -61,7 +65,7 @@ if platform.is_aix?
+ elsif platform.is_solaris?
+   pkg.build_requires "runtime-#{settings[:runtime_project]}"
+   pkg.build_requires "libedit" if platform.name =~ /^solaris-10-sparc/
+-elsif platform.is_cross_compiled_linux?
++elsif platform.is_cross_compiled_linux? && (! platform.name =~ /debian-(?:9|10)/)
+   pkg.build_requires "runtime-#{settings[:runtime_project]}"
+ end
+ 
+diff --git a/configs/components/ruby-2.5.8.rb b/configs/components/ruby-2.5.8.rb
+index f7e9ed5..0ac0d9c 100644
+--- a/configs/components/ruby-2.5.8.rb
++++ b/configs/components/ruby-2.5.8.rb
+@@ -43,7 +43,7 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+   # Patch for https://bugs.ruby-lang.org/issues/14972
+   pkg.apply_patch "#{base}/net_http_eof_14972_r2.5.patch"
+ 
+-  if platform.is_cross_compiled?
++  if platform.is_cross_compiled? && (! platform.name =~ /debian-(?:9|10)/)
+     pkg.apply_patch "#{base}/uri_generic_remove_safe_nav_operator_r2.5.patch"
+     if platform.name =~ /^solaris-10-sparc/
+       pkg.apply_patch "#{base}/Solaris-only-Replace-reference-to-RUBY-var-with-opt-pl-build-tool.patch"
+@@ -105,6 +105,8 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+     'aix-7.1-ppc',
+     'cisco-wrlinux-5-x86_64',
+     'cisco-wrlinux-7-x86_64',
++    'debian-9-armhf',
++    'debian-10-armhf',
+     'el-7-ppc64le',
+     'el-7-aarch64',
+     'eos-4-i386',
+diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
+index 4df8fc8..96d695c 100644
+--- a/configs/platforms/debian-10-armhf.rb
++++ b/configs/platforms/debian-10-armhf.rb
+@@ -27,6 +27,7 @@ platform "debian-10-armhf" do |plat|
+     'make',
+     'openjdk-11-jdk-headless',
+     'pkg-config',
++    'qemu-user-static',
+     'quilt',
+     'rsync',
+     "zlib1g-dev:#{plat.get_architecture}",
+diff --git a/configs/platforms/debian-9-armhf.rb b/configs/platforms/debian-9-armhf.rb
+index 704ca2f..b575870 100644
+--- a/configs/platforms/debian-9-armhf.rb
++++ b/configs/platforms/debian-9-armhf.rb
+@@ -27,6 +27,7 @@ platform "debian-9-armhf" do |plat|
+     'make',
+     'openjdk-8-jdk-headless',
+     'pkg-config',
++    'qemu-user-static',
+     'quilt',
+     'rsync',
+     "zlib1g-dev:#{plat.get_architecture}",
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 1df8f73..8f4f78d 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -106,6 +106,13 @@ platform_triple = "aarch64-redhat-linux" if platform.name == 'el-7-aarch64'
+ if platform.is_windows?
+   proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby.exe"))
+   proj.setting(:host_gem, File.join(proj.ruby_bindir, "gem.bat"))
++elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++  # For Debian 9+, we just run our cross-compiled ruby via QEMU which is a good
++  # check to see if it works.
++  #
++  # FIXME: Should add a platform.use_pl_build_tools? => false or similar to indicate this.
++  proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby"))
++  proj.setting(:host_gem, File.join(proj.ruby_bindir, "gem"))
+ elsif platform.is_cross_compiled_linux? || (platform.is_solaris? && platform.architecture == 'sparc')
+   # Install a standalone ruby for cross-compiled platforms
+   if platform.name =~ /solaris-10-sparc/
+-- 
+2.26.2
+

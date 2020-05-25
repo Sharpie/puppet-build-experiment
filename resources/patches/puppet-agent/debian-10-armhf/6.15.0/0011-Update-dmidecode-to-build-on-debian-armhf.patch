@@ -1,0 +1,36 @@
+From 4ce5ba7ae08938ed5bdd79c6b65c316ca3f44776 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 11 May 2019 17:28:25 -0700
+Subject: [PATCH 11/13] Update dmidecode to build on debian armhf
+
+This commit updates the dmidecode component to build on the debian-9-armhf
+and debian-10-armhf platforms using compilers provided by Debian's
+crossbuild-essential package.
+---
+ configs/components/dmidecode.rb | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/dmidecode.rb b/configs/components/dmidecode.rb
+index ed6007c4..58fe9ac9 100644
+--- a/configs/components/dmidecode.rb
++++ b/configs/components/dmidecode.rb
+@@ -23,10 +23,15 @@ component 'dmidecode' do |pkg, settings, platform|
+   pkg.environment "CFLAGS", settings[:cflags]
+ 
+   if platform.is_cross_compiled?
++    if platform.name =~ /debian-(?:9|10)/
++      compiler = "/usr/bin/#{platform.platform_triple}-gcc"
++    else
++      compiler = "/opt/pl-build-tools/bin#{platform.platform_triple}-gcc"
++    end
+     # The Makefile doesn't honor environment overrides, so we need to
+     # edit it directly for cross-compiling
+     pkg.configure do
+-      ["sed -i \"s|gcc|/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc|g\" Makefile"]
++      ["sed -i \"s|gcc|#{compiler}|g\" Makefile"]
+     end
+   end
+ 
+-- 
+2.26.2
+
