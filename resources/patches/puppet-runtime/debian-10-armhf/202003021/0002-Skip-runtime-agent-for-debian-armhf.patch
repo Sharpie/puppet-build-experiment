@@ -1,7 +1,7 @@
 From 22e851b799cbf4412e76d5954b54a6c6015c34c9 Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 29 Apr 2019 22:00:36 -0700
-Subject: [PATCH 2/9] Skip runtime-agent for debian armhf
+Subject: [PATCH 02/10] Skip runtime-agent for debian armhf
 
 This commit updates the runtime-agent component to be a no-op when built
 for the debian-9-armhf or debian-10-armhf platforms. This matches the

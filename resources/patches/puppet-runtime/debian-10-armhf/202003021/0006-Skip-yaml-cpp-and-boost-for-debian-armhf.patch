@@ -1,7 +1,7 @@
 From 71e1191a859bdb64ae8c4ffa2da80c4e9599fece Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 6 May 2019 21:53:23 -0700
-Subject: [PATCH 6/9] Skip yaml-cpp and boost for debian armhf
+Subject: [PATCH 06/10] Skip yaml-cpp and boost for debian armhf
 
 Let's take a page out of the SLES 15 book and not build these beefy
 dependencies into the runtime for debian-9-armhf and debian-10-armhf.

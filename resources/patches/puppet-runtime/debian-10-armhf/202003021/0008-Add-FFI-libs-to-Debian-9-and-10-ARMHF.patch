@@ -1,7 +1,7 @@
 From 637821e5766899456e07d8b7d0d75db5d21db9ec Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 17 Feb 2020 19:16:41 -0800
-Subject: [PATCH 8/9] Add FFI libs to Debian 9 and 10 ARMHF
+Subject: [PATCH 08/10] Add FFI libs to Debian 9 and 10 ARMHF
 
 This commit adds libraries and build dependencies required to support
 building the ffi rubygem on Debian armhf. These were added upstream in

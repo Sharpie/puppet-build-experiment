@@ -1,7 +1,7 @@
 From 009515e2a0c22d2d5c378d37120b3e7e9ddfc223 Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Sat, 29 Feb 2020 19:00:09 -0800
-Subject: [PATCH 9/9] Explicitly set target when cross-compiling Ruby
+Subject: [PATCH 09/10] Explicitly set target when cross-compiling Ruby
 
 This patch updates the cross-compiled Ruby build for armhf to
 explicitly set the `--target` flag during configuration. This

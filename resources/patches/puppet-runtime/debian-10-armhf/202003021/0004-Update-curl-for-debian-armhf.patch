@@ -1,7 +1,7 @@
 From 98cfa61872705f6f9054b6594cd6d05075f6b1b3 Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 29 Apr 2019 22:43:45 -0700
-Subject: [PATCH 4/9] Update curl for debian armhf
+Subject: [PATCH 04/10] Update curl for debian armhf
 
 This commit updates the curl component to build on the debian-9-armhf
 and debian-10-armhf platforms by skipping dependencies on

@@ -1,7 +1,7 @@
 From 34511930c2503a612788b0e1ff96a9eb3bf85be0 Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 6 May 2019 20:12:32 -0700
-Subject: [PATCH 5/9] Update ruby for debian armhf
+Subject: [PATCH 05/10] Update ruby for debian armhf
 
 This commit updates the ruby components to build on the debian-9-armhf
 and debian-10-armhf platforms by cutting dependencies on the following

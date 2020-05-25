@@ -1,7 +1,7 @@
 From 14bee00b298ab5e6707acf0c4fb4cff2e0dc052e Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 17 Feb 2020 15:27:54 -0800
-Subject: [PATCH 7/9] Add SELinux libs to Debian 9 and 10 ARMHF
+Subject: [PATCH 07/10] Add SELinux libs to Debian 9 and 10 ARMHF
 
 This commit adds libraries and build dependencies required to support
 SELinux binaries on Debian. These were added upstream after puppet-agent
