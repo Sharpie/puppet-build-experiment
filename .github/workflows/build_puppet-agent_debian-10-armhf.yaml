@@ -221,6 +221,9 @@ jobs:
           # Filter test cases that are expected to fail.
           #
           # no_errors_on_stderr: QEMU prints messages to stderr :(
+          # weighted_cached_custom_facts: Always produces an empty cache {}.
+          #   re-producible with released x86 packages. This test appears to
+          #   only work when tested in Jenkins :(
           # dmi: Not properly available inside Docker
           # networking_facts: Networking is strange inside Docker
           # non_root_users_without_errors: QEMU prints messages to stderr :(
@@ -228,6 +231,7 @@ jobs:
           # ruby: Does not expect ARM
           export TESTS=$(find tests -type f \
                          -not -path tests/no_errors_on_stderr.rb \
+                         -not -path tests/custom_facts/weighted_cached_custom_facts.rb \
                          -not -path tests/facts/dmi.rb \
                          -not -path tests/facts/networking_facts.rb \
                          -not -path tests/facts/non_root_users_without_errors.rb \
