@@ -1,0 +1,29 @@
+From b6650295abd73868787cbd1d928f32aac0baa3f4 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Wed, 26 Feb 2020 07:16:46 -0800
+Subject: [PATCH 12/12] Skip pl-ruby patch for Debian ARMHF
+
+Cross-compilation of puppet-agent for Debian ARMHF does not use the
+pl-ruby package, so there is no need to patch it for gem installation.
+---
+ configs/components/pl-ruby-patch.rb | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/pl-ruby-patch.rb b/configs/components/pl-ruby-patch.rb
+index a9272e63..b8581cae 100644
+--- a/configs/components/pl-ruby-patch.rb
++++ b/configs/components/pl-ruby-patch.rb
+@@ -7,7 +7,9 @@
+ #
+ # This component should also be present in the puppet-runtime project
+ component "pl-ruby-patch" do |pkg, settings, platform|
+-  if platform.is_cross_compiled?
++  if platform.is_cross_compiled_linux? && ( platform.name =~ /debian-(?:9|10)/ )
++    # Nothing to do here. We don't use pl-ruby.
++  elsif platform.is_cross_compiled?
+     ruby_api_version = settings[:ruby_version].gsub(/\.\d*$/, '.0')
+     base_ruby = case platform.name
+                 when /solaris-10/
+-- 
+2.27.0
+

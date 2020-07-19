@@ -13,7 +13,6 @@ component 'puppet-agent' do |pkg, settings, platform|
   # Ensure Vanagon does not try to use internal Puppet Inc. mirrors when
   # downloading sources.
   pkg.environment('VANAGON_USE_MIRRORS', 'n')
-  pkg.environment('PUPPET_RUNTIME_LOCATION', '../puppet-runtime/output')
 
   if Dir.exist?("resources/patches/puppet-agent/#{platform.name}")
     patch_sets = Dir.entries("resources/patches/puppet-agent/#{platform.name}").select {|e| e.match(/^\d+/)}.map {|p| Gem::Version.new(p) }
@@ -28,7 +27,8 @@ component 'puppet-agent' do |pkg, settings, platform|
   end
 
   pkg.configure do
-    ['bundle install --path=.bundle/lib']
+    ['bundle install --path=.bundle/lib',
+     %(sed -Eie "s|http[^\\"]+|file://$(realpath puppet-runtime/output)|" configs/components/puppet-runtime.json)]
   end
 
   pkg.build do

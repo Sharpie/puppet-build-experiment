@@ -1,0 +1,104 @@
+From 732f50fb5591d545364ec8289b456be216392e44 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 2 Jul 2019 21:58:55 -0700
+Subject: [PATCH 02/12] Remove debian armhf pl-build-tools dependencies
+
+This commit patches various components that go into building puppet-agent
+to remove dependencies on packages from `pl-build-tools-vanagon`. The
+debian-9-armhf and debian-10-armhf platforms use either system tools and
+cross-compilers, or run cross-compiled binaries under QEMU.
+---
+ configs/components/leatherman.rb     | 4 +++-
+ configs/components/puppet-runtime.rb | 5 ++++-
+ configs/components/puppet.rb         | 4 ++++
+ configs/components/runtime.rb        | 7 +++++--
+ 4 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/configs/components/leatherman.rb b/configs/components/leatherman.rb
+index 6e9059a2..e9f684a5 100644
+--- a/configs/components/leatherman.rb
++++ b/configs/components/leatherman.rb
+@@ -3,7 +3,9 @@ component "leatherman" do |pkg, settings, platform|
+ 
+   make = platform[:make]
+ 
+-  if platform.is_macos?
++  if platform.is_cross_compiled_linux? && (platform.name =~ /debian-(?:9|10)/)
++    # Built using cross-build-essential
++  elsif platform.is_macos?
+     pkg.build_requires "cmake"
+     pkg.build_requires "gettext"
+   elsif platform.name =~ /solaris-10/
+diff --git a/configs/components/puppet-runtime.rb b/configs/components/puppet-runtime.rb
+index 6a6087e0..a491c593 100644
+--- a/configs/components/puppet-runtime.rb
++++ b/configs/components/puppet-runtime.rb
+@@ -44,7 +44,8 @@ component 'puppet-runtime' do |pkg, settings, platform|
+ 
+   pkg.install_only true
+ 
+-  if platform.is_cross_compiled_linux? || platform.is_solaris? || platform.is_aix?
++  if !(platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/) &&
++      (platform.is_cross_compiled_linux? || platform.is_solaris? || platform.is_aix?)
+     pkg.build_requires 'runtime'
+   end
+ 
+@@ -54,6 +55,8 @@ component 'puppet-runtime' do |pkg, settings, platform|
+     if platform.os_version == "11"
+       pkg.build_requires 'pl-ruby'
+     end
++  elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++    # We use puppet-runtime's Ruby via QEMU
+   elsif platform.is_cross_compiled_linux?
+     pkg.build_requires 'pl-ruby'
+   end
+diff --git a/configs/components/puppet.rb b/configs/components/puppet.rb
+index d8c7266f..75a949a4 100644
+--- a/configs/components/puppet.rb
++++ b/configs/components/puppet.rb
+@@ -12,6 +12,8 @@ component "puppet" do |pkg, settings, platform|
+     pkg.build_requires "pl-gettext-#{platform.architecture}"
+   elsif platform.is_aix?
+     pkg.build_requires "http://pl-build-tools.delivery.puppetlabs.net/aix/#{platform.os_version}/ppc/pl-gettext-0.19.8-2.aix#{platform.os_version}.ppc.rpm"
++  elsif (platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/)
++    # Cross-compiled ARMHF builds use system tools.
+   elsif platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/
+     pkg.build_requires "pl-gettext"
+   end
+@@ -107,6 +109,8 @@ component "puppet" do |pkg, settings, platform|
+       msgfmt = "/cygdrive/c/tools/pl-build-tools/bin/msgfmt.exe"
+     elsif platform.is_macos?
+       msgfmt = "/usr/local/opt/gettext/bin/msgfmt"
++    elsif (platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/)
++      msgfmt = "msgfmt"
+     elsif platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
+           platform.is_aix?
+       msgfmt = "/opt/pl-build-tools/bin/msgfmt"
+diff --git a/configs/components/runtime.rb b/configs/components/runtime.rb
+index 2629504d..7140c8ce 100644
+--- a/configs/components/runtime.rb
++++ b/configs/components/runtime.rb
+@@ -2,7 +2,9 @@
+ component "runtime" do |pkg, settings, platform|
+   pkg.add_source "file://resources/files/runtime/runtime.sh"
+ 
+-  if platform.name =~ /solaris-10/
++  if platform.is_cross_compiled_linux? && (platform.name =~ /debian-(?:9|10)/)
++    # Built using crossbuild-essential
++  elsif platform.name =~ /solaris-10/
+     if platform.architecture == 'sparc'
+       pkg.build_requires "http://pl-build-tools.delivery.puppetlabs.net/solaris/10/pl-gcc-4.8.2-9.#{platform.architecture}.pkg.gz"
+       pkg.build_requires "http://pl-build-tools.delivery.puppetlabs.net/solaris/10/pl-binutils-2.27-2.#{platform.architecture}.pkg.gz"
+@@ -43,7 +45,8 @@ component "runtime" do |pkg, settings, platform|
+   if platform.is_aix?
+     pkg.install_file File.join(libdir, "libstdc++.a"), "/opt/puppetlabs/puppet/lib/libstdc++.a"
+     pkg.install_file File.join(libdir, "libgcc_s.a"), "/opt/puppetlabs/puppet/lib/libgcc_s.a"
+-  elsif platform.is_macos?
++  elsif platform.is_macos? ||
++        (platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/)
+     # Nothing to see here
+   elsif platform.is_windows?
+     lib_type = platform.architecture == "x64" ? "seh" : "sjlj"
+-- 
+2.27.0
+
