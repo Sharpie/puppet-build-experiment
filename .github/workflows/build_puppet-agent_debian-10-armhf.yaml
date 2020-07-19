@@ -36,7 +36,8 @@ jobs:
           sudo apt install -y qemu-user-static
 
           gem install bundler
-          bundle install --path .bundle/lib
+          bundle config set path '.bundle/lib'
+          bundle install
 
           curl -O https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant
           chmod 0600 vagrant
