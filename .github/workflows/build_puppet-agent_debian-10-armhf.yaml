@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64:latest'
     steps:
@@ -113,7 +113,7 @@ jobs:
 
 
   test-puppet-agent:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: build
     env:
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
@@ -171,7 +171,7 @@ jobs:
 
 
   test-facter:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: build
     env:
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
@@ -242,7 +242,7 @@ jobs:
 
 
   ship:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs:
       - test-puppet-agent
       - test-facter
