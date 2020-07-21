@@ -1,0 +1,76 @@
+From 76b8bdfea7c21ffff0a0dc9d972c8b0a4f77f64e Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 6 May 2019 21:53:23 -0700
+Subject: [PATCH 06/10] Skip yaml-cpp and boost for debian armhf
+
+Let's take a page out of the SLES 15 book and not build these beefy
+dependencies into the runtime for debian-9-armhf and debian-10-armhf.
+---
+ configs/projects/agent-runtime-master.rb      |  5 ++-
+ configs/projects/agent-runtime-master.rb.orig | 40 +++++++++++++++++++
+ 2 files changed, 43 insertions(+), 2 deletions(-)
+ create mode 100644 configs/projects/agent-runtime-master.rb.orig
+
+diff --git a/configs/projects/agent-runtime-master.rb b/configs/projects/agent-runtime-master.rb
+index 5d6d67f..c7fc59f 100644
+--- a/configs/projects/agent-runtime-master.rb
++++ b/configs/projects/agent-runtime-master.rb
+@@ -40,6 +40,7 @@ project 'agent-runtime-master' do |proj|
+     proj.component 'rubygem-sys-filesystem'
+   end
+ 
+-  proj.component 'boost'
+-  proj.component 'yaml-cpp'
++  # Skip cross-compiling Boost
++  proj.component 'boost' unless platform.name =~ /debian-(?:9|10)-armhf/
++  proj.component 'yaml-cpp' unless platform.name =~ /debian-(?:9|10)-armhf/
+ end
+diff --git a/configs/projects/agent-runtime-master.rb.orig b/configs/projects/agent-runtime-master.rb.orig
+new file mode 100644
+index 0000000..7ffabfd
+--- /dev/null
++++ b/configs/projects/agent-runtime-master.rb.orig
+@@ -0,0 +1,40 @@
++project 'agent-runtime-master' do |proj|
++  # Set preferred component versions if they differ from defaults:
++  proj.setting :ruby_version, '2.5.7'
++  proj.setting :augeas_version, '1.12.0'
++  proj.setting :openssl_version, platform.name =~ /windowsfips-2012r2/ ? '1.0.2' : '1.1.1'
++
++  ########
++  # Load shared agent settings
++  ########
++
++  instance_eval File.read(File.join(File.dirname(__FILE__), '_shared-agent-settings.rb'))
++
++  ########
++  # Settings specific to the master branch
++  ########
++
++  # Directory for gems shared by puppet and puppetserver
++  proj.setting(:puppet_gem_vendor_dir, File.join(proj.libdir, "ruby", "vendor_gems"))
++
++  ########
++  # Load shared agent components
++  ########
++
++  instance_eval File.read(File.join(File.dirname(__FILE__), '_shared-agent-components.rb'))
++
++  ########
++  # Components specific to the master branch
++  ########
++
++  proj.component 'rubygem-concurrent-ruby'
++  proj.component 'rubygem-multi_json'
++  proj.component 'rubygem-optimist'
++  proj.component 'rubygem-highline'
++  proj.component 'rubygem-hiera-eyaml'
++  proj.component 'rubygem-httpclient'
++  proj.component 'rubygem-thor'
++  # SLES 15 uses the OS distro versions of boost and yaml-cpp:
++  proj.component 'boost' unless platform.name =~ /sles-15/
++  proj.component 'yaml-cpp' unless platform.name =~ /sles-15/
++end
+-- 
+2.27.0
+

@@ -1,0 +1,43 @@
+From 139f839ccc9f738f52b5a58df9994830b5c8521f Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 11 May 2019 09:29:09 -0700
+Subject: [PATCH 04/12] Update leatherman to build on debian armhf
+
+This commit updates the leatherman component to build on the debian-9-armhf
+and debian-10-armhf platforms using Debian's cmake and to link against
+the platform's Boost libraries.
+---
+ configs/components/leatherman.rb | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/configs/components/leatherman.rb b/configs/components/leatherman.rb
+index e9f684a5..95793c98 100644
+--- a/configs/components/leatherman.rb
++++ b/configs/components/leatherman.rb
+@@ -41,6 +41,23 @@ component "leatherman" do |pkg, settings, platform|
+     cmake = "/usr/local/bin/cmake"
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF -DLEATHERMAN_MOCK_CURL=FALSE"
++  elsif platform.is_cross_compiled_linux? && platform.name =~ /debian-(?:9|10)/
++    # Use system cmake and libraries
++    cmake = '/usr/bin/cmake'
++
++    # Env variables used by CMakeCross.txt to select the desired
++    # crossbuild-essential-<arch> toolchain.
++    pkg.environment('DEB_HOST_ARCH', platform.architecture)
++    pkg.environment('DEB_HOST_GNU_TYPE', platform.platform_triple)
++    toolchain = '-DCMAKE_TOOLCHAIN_FILE=/etc/dpkg-cross/cmake/CMakeCross.txt'
++
++    boost_static_flag = "-DBOOST_STATIC=OFF"
++    special_flags = ["-DBOOST_INCLUDEDIR=/usr/include",
++                     "-DBOOST_LIBRARYDIR=/usr/lib/#{platform.platform_triple}",
++                     "-DCMAKE_FIND_ROOT_PATH='/opt/puppetlabs/puppet;/usr'"]
++
++    special_flags += ["-DENABLE_CXX_WERROR=OFF", "-DCMAKE_CXX_FLAGS='-O1'"] if platform.name =~ /debian-10/
++    special_flags = special_flags.join(' ')
+   elsif platform.is_cross_compiled_linux?
+     ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+-- 
+2.27.0
+

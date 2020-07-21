@@ -1,0 +1,28 @@
+From e90779017fde49e63b915d2d388696aad2fcc899 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 25 May 2020 09:31:40 -0700
+Subject: [PATCH 10/10] Skip pl-ruby-patch when cross-compiling Debian
+
+This commit updates pl-ruby-patch to be a no-op when cross-compiling
+for Debian. The ARHMF builds do cross compile, but they do not use
+pl-ruby.
+---
+ configs/components/pl-ruby-patch.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/components/pl-ruby-patch.rb b/configs/components/pl-ruby-patch.rb
+index ebb873c..54e0f50 100644
+--- a/configs/components/pl-ruby-patch.rb
++++ b/configs/components/pl-ruby-patch.rb
+@@ -7,7 +7,7 @@
+ #
+ # This component should also be present in the puppet-agent project
+ component "pl-ruby-patch" do |pkg, settings, platform|
+-  if platform.is_cross_compiled?
++  if platform.is_cross_compiled? && (! platform.name =~ /debian-(?:9|10)/)
+     ruby_api_version = settings[:ruby_version].gsub(/\.\d*$/, '.0')
+     base_ruby = case platform.name
+                 when /solaris-10/
+-- 
+2.27.0
+

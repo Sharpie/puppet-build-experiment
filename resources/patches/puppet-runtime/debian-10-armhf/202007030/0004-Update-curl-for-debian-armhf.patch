@@ -1,0 +1,28 @@
+From 5167d54553684bdcc2c22536d2fe1178bdb2c88f Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 29 Apr 2019 22:43:45 -0700
+Subject: [PATCH 04/10] Update curl for debian armhf
+
+This commit updates the curl component to build on the debian-9-armhf
+and debian-10-armhf platforms by skipping dependencies on
+pl-build-tools.
+---
+ configs/components/curl.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/components/curl.rb b/configs/components/curl.rb
+index ee9357b..26205c7 100644
+--- a/configs/components/curl.rb
++++ b/configs/components/curl.rb
+@@ -15,7 +15,7 @@ component 'curl' do |pkg, settings, platform|
+ 
+   pkg.build_requires "puppet-ca-bundle"
+ 
+-  if platform.is_cross_compiled_linux?
++  if platform.is_cross_compiled_linux? && ( ! platform.name =~ /debian-(?:9|10)/ )
+     pkg.build_requires "runtime-#{settings[:runtime_project]}"
+     pkg.environment "PATH" => "/opt/pl-build-tools/bin:$(PATH):#{settings[:bindir]}"
+     pkg.environment "PKG_CONFIG_PATH" => "/opt/puppetlabs/puppet/lib/pkgconfig"
+-- 
+2.27.0
+
