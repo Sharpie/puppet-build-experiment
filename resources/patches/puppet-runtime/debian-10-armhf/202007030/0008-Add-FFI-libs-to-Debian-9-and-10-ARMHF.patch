@@ -1,4 +1,4 @@
-From 97408c618724c5329599dbf5755f0bff3217219a Mon Sep 17 00:00:00 2001
+From 377639533a29ff4c7831b93c67a1870abe5e93fe Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 17 Feb 2020 19:16:41 -0800
 Subject: [PATCH 08/10] Add FFI libs to Debian 9 and 10 ARMHF
@@ -13,10 +13,10 @@ https://github.com/puppetlabs/puppet-runtime/commit/c8c87a6
  configs/components/_base-ruby-selinux.rb |  1 +
  configs/components/ruby-2.5.8.rb         |  3 ++
  configs/components/ruby-shadow.rb        |  2 ++
- configs/components/rubygem-ffi.rb        | 37 ++++++++++++++++++++++++
+ configs/components/rubygem-ffi.rb        | 39 +++++++++++++++++++++++-
  configs/platforms/debian-10-armhf.rb     |  1 +
  configs/platforms/debian-9-armhf.rb      |  1 +
- 7 files changed, 49 insertions(+), 4 deletions(-)
+ 7 files changed, 50 insertions(+), 5 deletions(-)
 
 diff --git a/configs/components/_base-ruby-augeas.rb b/configs/components/_base-ruby-augeas.rb
 index 5e7d6da..3834f4e 100644
@@ -81,7 +81,7 @@ index 0490dbc..f9f13a2 100644
      pkg.environment "RUBY", settings[:host_ruby]
      ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
 diff --git a/configs/components/rubygem-ffi.rb b/configs/components/rubygem-ffi.rb
-index 266cc53..846ac99 100644
+index 266cc53..913e980 100644
 --- a/configs/components/rubygem-ffi.rb
 +++ b/configs/components/rubygem-ffi.rb
 @@ -50,6 +50,43 @@ component "rubygem-ffi" do |pkg, settings, platform|
@@ -128,6 +128,15 @@ index 266cc53..846ac99 100644
    end
  
    pkg.environment 'PATH', '/opt/freeware/bin:/opt/pl-build-tools/bin:$(PATH)' if platform.is_aix?
+@@ -57,7 +94,7 @@ component "rubygem-ffi" do |pkg, settings, platform|
+   # FFI 1.13.1 forced the minimum required ruby version to ~> 2.3
+   # In order to be able to install the gem using pl-ruby(2.1.9)
+   # we need to remove the required ruby version check
+-  if platform.is_cross_compiled?
++  if platform.is_cross_compiled? && ! ( platform.name =~ /debian-(?:9|10)/ )
+     base_ruby = case platform.name
+                 when /solaris-10/
+                   "/opt/csw/lib/ruby/2.0.0"
 diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
 index 87a277c..bbdab05 100644
 --- a/configs/platforms/debian-10-armhf.rb

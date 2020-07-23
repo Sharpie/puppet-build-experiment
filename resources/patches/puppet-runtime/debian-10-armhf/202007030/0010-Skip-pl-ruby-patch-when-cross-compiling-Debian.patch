@@ -1,4 +1,4 @@
-From e90779017fde49e63b915d2d388696aad2fcc899 Mon Sep 17 00:00:00 2001
+From ce50e70a2a60b2b984ef61117fb40ad78e1aeebf Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Mon, 25 May 2020 09:31:40 -0700
 Subject: [PATCH 10/10] Skip pl-ruby-patch when cross-compiling Debian

@@ -1,4 +1,4 @@
-From 034331b34507a701965a46d2e8a2992a1963e7ab Mon Sep 17 00:00:00 2001
+From 97a135cae07b1f1d92510353db5d19432c38a1ac Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Sat, 29 Feb 2020 19:00:09 -0800
 Subject: [PATCH 09/10] Explicitly set target when cross-compiling Ruby
