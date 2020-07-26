@@ -24,7 +24,9 @@ platform "debian-10-armhf" do |plat|
 
   plat.vmpooler_template "debian-10-x86_64"
 
-  plat.docker_image ENV['VANAGON_DOCKER_IMAGE']
-  plat.docker_run_args ENV['VANAGON_DOCKER_RUN_ARGS'].split(' ')
-  plat.ssh_port ENV['VANAGON_SSH_PORT']
+  plat.docker_image ENV.fetch('VANAGON_DOCKER_IMAGE', 'debian:10-slim')
+  # Vanagon starts detached containers, adding `--tty` and using a shell as
+  # the entry point causes the container to persist for other commands to run.
+  plat.docker_run_args ['--tty', '--entrypoint=/bin/sh']
+  plat.use_docker_exec true
 end

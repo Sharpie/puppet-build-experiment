@@ -7,6 +7,7 @@ gem 'puppetlabs_spec_helper', '>= 2.9.0', '< 3.0.0'
 gem 'rake', '~> 12.3'
 gem 'serverspec', '~> 2.41'
 
-gem 'vanagon', '~> 0.15.31'
+gem 'vanagon', git: 'https://github.com/Sharpie/vanagon',
+               branch: 'vanagon-100-use-docker-exec'
 
 eval_gemfile "#{__FILE__}.local" if File.exists? "#{__FILE__}.local"

@@ -6,10 +6,6 @@ component 'puppet-agent' do |pkg, settings, platform|
 
   pkg.add_source(File.expand_path('output/puppet-runtime'))
 
-  # Update the Vanagon version to ensure the newest features added for
-  # community builds are present.
-  # NOTE: If Vanagon hits 1.0, this may no longer work.
-  pkg.environment('VANAGON_LOCATION', "https://github.com/puppetlabs/vanagon.git##{VANAGON_VERSION}")
   # Ensure Vanagon does not try to use internal Puppet Inc. mirrors when
   # downloading sources.
   pkg.environment('VANAGON_USE_MIRRORS', 'n')
