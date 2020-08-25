@@ -1,0 +1,176 @@
+From 92333d802ab639cd57ed238dae19e01618c7ca35 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 1 Aug 2020 11:30:42 -0700
+Subject: [PATCH 2/6] Cross-compile Facter without pl-build-tools
+
+This commit updates the puppet-runtime, leatherman, cpp-hocon,
+libwhereami, and facter components to allow cross-compilation without the
+pl-build-tools package.  This configuration can be activated by setting
+`:use_pl_build_tools` to false in the platform definition when compiling
+puppet-runtime.
+
+CMake toolchain arguments are also sourced from the
+`:cmake_toolchain` setting.
+---
+ configs/components/cpp-hocon.rb      |  4 ++--
+ configs/components/facter.rb         | 11 ++++++-----
+ configs/components/leatherman.rb     | 11 ++++++-----
+ configs/components/libwhereami.rb    |  4 ++--
+ configs/components/puppet-runtime.rb |  4 ++--
+ 5 files changed, 18 insertions(+), 16 deletions(-)
+
+diff --git a/configs/components/cpp-hocon.rb b/configs/components/cpp-hocon.rb
+index d956b9e1..8d9b3142 100644
+--- a/configs/components/cpp-hocon.rb
++++ b/configs/components/cpp-hocon.rb
+@@ -13,7 +13,7 @@ component "cpp-hocon" do |pkg, settings, platform|
+     cmake = "/usr/local/bin/cmake"
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+     cmake = "/opt/pl-build-tools/bin/cmake"
+   elsif platform.is_solaris?
+@@ -38,7 +38,7 @@ component "cpp-hocon" do |pkg, settings, platform|
+     pkg.environment "CPPFLAGS", settings[:cppflags]
+     pkg.environment "LDFLAGS", settings[:ldflags]
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags = " -DENABLE_CXX_WERROR=OFF -DCMAKE_CXX_FLAGS='#{settings[:cflags]}'"
+   end
+diff --git a/configs/components/facter.rb b/configs/components/facter.rb
+index dcd1304f..56aef30d 100644
+--- a/configs/components/facter.rb
++++ b/configs/components/facter.rb
+@@ -20,8 +20,9 @@ component "facter" do |pkg, settings, platform|
+ 
+   pkg.build_requires 'puppet-runtime' # Provides augeas, boost, curl, openssl, ruby, yaml-cpp
+   pkg.build_requires 'leatherman'
+-  pkg.build_requires 'runtime' if platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
+-                                  !platform.is_linux?
++  pkg.build_requires 'runtime' if settings[:use_pl_build_tools] &&
++                                  ( platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
++                                    !platform.is_linux? )
+   pkg.build_requires 'cpp-hocon'
+   pkg.build_requires 'libwhereami'
+ 
+@@ -50,7 +51,7 @@ component "facter" do |pkg, settings, platform|
+     pkg.build_requires 'openjdk-8-jdk'
+     java_home = "/usr/lib/jvm/java-8-openjdk-#{platform.architecture}"
+   when /debian-10|ubuntu-20/
+-    pkg.build_requires 'openjdk-11-jdk'
++    pkg.build_requires "openjdk-11-jdk:#{platform.architecture}"
+     java_home = "/usr/lib/jvm/java-11-openjdk-#{platform.architecture}"
+   when /sles-12/
+     pkg.build_requires 'java-1_7_0-openjdk-devel'
+@@ -120,7 +121,7 @@ component "facter" do |pkg, settings, platform|
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags += "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF"
+     yamlcpp_static_flag = "-DYAMLCPP_STATIC=OFF"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+     cmake = "/opt/pl-build-tools/bin/cmake"
+@@ -152,7 +153,7 @@ component "facter" do |pkg, settings, platform|
+     pkg.environment "CPPFLAGS", settings[:cppflags]
+     pkg.environment "LDFLAGS", settings[:ldflags]
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     yamlcpp_static_flag = "-DYAMLCPP_STATIC=OFF"
+     special_flags += " -DENABLE_CXX_WERROR=OFF -DCMAKE_CXX_FLAGS='#{settings[:cflags]}'"
+diff --git a/configs/components/leatherman.rb b/configs/components/leatherman.rb
+index 6e9059a2..6f556046 100644
+--- a/configs/components/leatherman.rb
++++ b/configs/components/leatherman.rb
+@@ -8,7 +8,7 @@ component "leatherman" do |pkg, settings, platform|
+     pkg.build_requires "gettext"
+   elsif platform.name =~ /solaris-10/
+     pkg.build_requires "http://pl-build-tools.delivery.puppetlabs.net/solaris/10/pl-cmake-3.2.3-2.i386.pkg.gz"
+-  elsif platform.is_cross_compiled_linux? || platform.name =~ /solaris-11/
++  elsif settings[:use_pl_build_tools] && (platform.is_cross_compiled_linux? || platform.name =~ /solaris-11/)
+     pkg.build_requires "pl-cmake"
+   elsif platform.is_aix?
+     pkg.build_requires "http://pl-build-tools.delivery.puppetlabs.net/aix/#{platform.os_version}/ppc/pl-gcc-5.2.0-11.aix#{platform.os_version}.ppc.rpm"
+@@ -23,8 +23,9 @@ component "leatherman" do |pkg, settings, platform|
+   end
+ 
+   pkg.build_requires "puppet-runtime" # Provides curl and ruby
+-  pkg.build_requires "runtime" if platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
+-                                  !platform.is_linux?
++  pkg.build_requires "runtime" if settings[:use_pl_build_tools] &&
++                                  ( platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
++                                    !platform.is_linux? )
+ 
+   ruby = "#{settings[:host_ruby]} -rrbconfig"
+ 
+@@ -39,7 +40,7 @@ component "leatherman" do |pkg, settings, platform|
+     cmake = "/usr/local/bin/cmake"
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF -DLEATHERMAN_MOCK_CURL=FALSE"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_buld_tools] && platform.is_cross_compiled_linux?
+     ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+     cmake = "/opt/pl-build-tools/bin/cmake"
+@@ -74,7 +75,7 @@ component "leatherman" do |pkg, settings, platform|
+     pkg.environment "CPPFLAGS", settings[:cppflags]
+     pkg.environment "LDFLAGS", settings[:ldflags]
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     boost_static_flag = ""
+ 
+     # Workaround for hanging leatherman tests (-fno-strict-overflow)
+diff --git a/configs/components/libwhereami.rb b/configs/components/libwhereami.rb
+index 1f3f336a..8b331fd0 100644
+--- a/configs/components/libwhereami.rb
++++ b/configs/components/libwhereami.rb
+@@ -13,7 +13,7 @@ component "libwhereami" do |pkg, settings, platform|
+     cmake = "/usr/local/bin/cmake"
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}'"
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+     cmake = "/opt/pl-build-tools/bin/cmake"
+   elsif platform.is_solaris?
+@@ -40,7 +40,7 @@ component "libwhereami" do |pkg, settings, platform|
+   else
+     # These platforms use the default OS toolchain, rather than pl-build-tools
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+     special_flags = " -DENABLE_CXX_WERROR=OFF " unless platform.name =~ /sles-15/
+   end
+diff --git a/configs/components/puppet-runtime.rb b/configs/components/puppet-runtime.rb
+index e0ad8c98..5467afe9 100644
+--- a/configs/components/puppet-runtime.rb
++++ b/configs/components/puppet-runtime.rb
+@@ -29,7 +29,7 @@ component 'puppet-runtime' do |pkg, settings, platform|
+ 
+   pkg.install_only true
+ 
+-  if platform.is_cross_compiled_linux? || platform.is_solaris? || platform.is_aix?
++  if settings[:use_pl_build_tools] && platform.is_cross_compiled_linux? || platform.is_solaris? || platform.is_aix?
+     pkg.build_requires 'runtime'
+   end
+ 
+@@ -39,7 +39,7 @@ component 'puppet-runtime' do |pkg, settings, platform|
+     if platform.os_version == "11"
+       pkg.build_requires 'pl-ruby'
+     end
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_buld_tools] && platform.is_cross_compiled_linux?
+     pkg.build_requires 'pl-ruby'
+   end
+ 
+-- 
+2.28.0
+

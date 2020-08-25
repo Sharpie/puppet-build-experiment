@@ -1,0 +1,46 @@
+From 74cd725307c45591e01b71e1ac0ff8ca35eb13c4 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Wed, 29 Jul 2020 11:42:31 -0700
+Subject: [PATCH 01/11] Allow agent runtime to opt-out of pl-build-tools
+
+This commit adds a :use_pl_build_tools setting to the shared settings
+for the puppet-agent runtime that is copied from platform settings.
+When set to `false` this setting indicates the platform will not use
+the compilers and other binaries built from the pl-build-tools-vanagon
+project. The default value for the setting is `true`, which preserves
+existing behavior.
+---
+ configs/components/runtime-agent.rb        | 4 +++-
+ configs/projects/_shared-agent-settings.rb | 1 +
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/runtime-agent.rb b/configs/components/runtime-agent.rb
+index b517474..1c0661a 100644
+--- a/configs/components/runtime-agent.rb
++++ b/configs/components/runtime-agent.rb
+@@ -20,7 +20,9 @@ component "runtime-agent" do |pkg, settings, platform|
+   # The runtime script uses readlink, which is in an odd place on Solaris systems:
+   pkg.environment "PATH", "$(PATH):/opt/csw/gnu" if platform.is_solaris?
+ 
+-  if platform.is_aix?
++  if (! settings[:use_pl_build_tools])
++    # Do nothing.
++  elsif platform.is_aix?
+     pkg.install_file File.join(libdir, "libstdc++.a"), "/opt/puppetlabs/puppet/lib/libstdc++.a"
+     pkg.install_file File.join(libdir, "libgcc_s.a"), "/opt/puppetlabs/puppet/lib/libgcc_s.a"
+   elsif platform.is_windows?
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 948c2f7..2992d7a 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -26,6 +26,7 @@ proj.vendor 'Puppet, Inc.  <info@puppet.com>'
+ proj.homepage 'https://puppet.com'
+ proj.version_from_git
+ 
++proj.setting(:use_pl_build_tools, platform.settings.fetch(:use_pl_build_tools, true))
+ proj.setting(:artifactory_url, "https://artifactory.delivery.puppetlabs.net/artifactory")
+ proj.setting(:buildsources_url, "#{proj.artifactory_url}/generic/buildsources")
+ 
+-- 
+2.28.0
+

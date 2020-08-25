@@ -1,0 +1,28 @@
+From 155794bc0ce6a82df2a960fa834730a76dfcffdc Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sun, 2 Aug 2020 12:09:33 -0700
+Subject: [PATCH 5/6] Skip pl-ruby-patch unless pl-build-tools is in use
+
+This commit updates the facter-ng component to skip the use of the
+pl-ruby-patch component, which patches pl-build-tools Ruby in or
+out of the build, when pl-build-tools is not being used.
+---
+ configs/components/facter-ng.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/components/facter-ng.rb b/configs/components/facter-ng.rb
+index b26dafe8..5a162cb8 100644
+--- a/configs/components/facter-ng.rb
++++ b/configs/components/facter-ng.rb
+@@ -4,7 +4,7 @@ component "facter-ng" do |pkg, settings, platform|
+   pkg.url "https://github.com/puppetlabs/facter/archive/#{pkg.get_version}.tar.gz"
+ 
+   pkg.build_requires "puppet-runtime"
+-  pkg.build_requires "pl-ruby-patch"
++  pkg.build_requires "pl-ruby-patch" if settings[:use_pl_build_tools]
+ 
+   # When cross-compiling, we can't use the rubygems we just built.
+   # Instead we use the host gem installation and override GEM_HOME. Yay?
+-- 
+2.28.0
+

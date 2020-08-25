@@ -1,0 +1,36 @@
+From 6e82d4651b3c32a73ae86fa12eafd62b79f1a72c Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sun, 2 Aug 2020 12:02:09 -0700
+Subject: [PATCH 3/6] Cross-compile Dmidecode without pl-build-tools
+
+This commit updates the dmidecode component to refer to compiler
+designated by the `:cc` setting if `:use_pl_build_tools` is set
+to `false`.
+---
+ configs/components/dmidecode.rb | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/dmidecode.rb b/configs/components/dmidecode.rb
+index ed6007c4..a069693b 100644
+--- a/configs/components/dmidecode.rb
++++ b/configs/components/dmidecode.rb
+@@ -23,10 +23,15 @@ component 'dmidecode' do |pkg, settings, platform|
+   pkg.environment "CFLAGS", settings[:cflags]
+ 
+   if platform.is_cross_compiled?
++    cc = if settings[:use_pl_build_tools]
++           "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
++         else
++           settings[:cc]
++         end
+     # The Makefile doesn't honor environment overrides, so we need to
+     # edit it directly for cross-compiling
+     pkg.configure do
+-      ["sed -i \"s|gcc|/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc|g\" Makefile"]
++      ["sed -i \"s|gcc|#{cc}|g\" Makefile"]
+     end
+   end
+ 
+-- 
+2.28.0
+

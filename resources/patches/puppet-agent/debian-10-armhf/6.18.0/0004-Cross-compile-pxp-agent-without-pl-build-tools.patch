@@ -1,0 +1,63 @@
+From de38a8499e32e6b3883e143429e74e726fd6895a Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sun, 2 Aug 2020 12:05:58 -0700
+Subject: [PATCH 4/6] Cross-compile pxp-agent without pl-build-tools
+
+This commit updates the cpp-pxp-client and pxp-agent components to allow
+cross-compilation without the pl-build-tools package.  This configuration
+can be activated by setting `:use_pl_build_tools` to false in the
+platform definition when compiling puppet-runtime.
+
+CMake toolchain arguments are also sourced from the `:cmake_toolchain` setting.
+---
+ configs/components/cpp-pcp-client.rb | 4 ++--
+ configs/components/pxp-agent.rb      | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/configs/components/cpp-pcp-client.rb b/configs/components/cpp-pcp-client.rb
+index 8614ccff..e544b10b 100644
+--- a/configs/components/cpp-pcp-client.rb
++++ b/configs/components/cpp-pcp-client.rb
+@@ -29,7 +29,7 @@ component "cpp-pcp-client" do |pkg, settings, platform|
+     special_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF"
+     toolchain = ""
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     cmake = "/opt/pl-build-tools/bin/cmake"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+   elsif platform.is_solaris?
+@@ -48,7 +48,7 @@ component "cpp-pcp-client" do |pkg, settings, platform|
+     pkg.environment "CPPFLAGS", settings[:cppflags]
+     pkg.environment "LDFLAGS", settings[:ldflags]
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     platform_flags = "-DCMAKE_CXX_FLAGS='#{settings[:cflags]} -Wimplicit-fallthrough=0'"
+     special_flags = " -DENABLE_CXX_WERROR=OFF"
+   end
+diff --git a/configs/components/pxp-agent.rb b/configs/components/pxp-agent.rb
+index 35a2fb42..f0e8b3d8 100644
+--- a/configs/components/pxp-agent.rb
++++ b/configs/components/pxp-agent.rb
+@@ -33,7 +33,7 @@ component "pxp-agent" do |pkg, settings, platform|
+     toolchain = ""
+     special_flags += "-DCMAKE_CXX_FLAGS='#{settings[:cflags]}' -DENABLE_CXX_WERROR=OFF"
+     boost_static_flag = "-DBOOST_STATIC=OFF"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     cmake = "/opt/pl-build-tools/bin/cmake"
+     toolchain = "-DCMAKE_TOOLCHAIN_FILE=/opt/pl-build-tools/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+   elsif platform.is_solaris?
+@@ -59,7 +59,7 @@ component "pxp-agent" do |pkg, settings, platform|
+   else
+     # These platforms use the default OS toolchain, rather than pl-build-tools
+     cmake = "cmake"
+-    toolchain = ""
++    toolchain = settings[:cmake_toolchain]
+     special_flags += " -DCMAKE_CXX_FLAGS='#{settings[:cflags]} -Wno-deprecated -Wimplicit-fallthrough=0' "
+     special_flags += " -DENABLE_CXX_WERROR=OFF " unless platform.name =~ /sles-15/
+   end
+-- 
+2.28.0
+

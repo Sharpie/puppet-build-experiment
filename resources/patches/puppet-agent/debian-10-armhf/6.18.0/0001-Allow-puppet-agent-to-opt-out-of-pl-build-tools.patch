@@ -1,0 +1,51 @@
+From b9915082142cf30ba8f1d7727d509b6774a2a1c6 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 1 Aug 2020 11:07:42 -0700
+Subject: [PATCH 1/6] Allow puppet-agent to opt out of pl-build-tools
+
+This commit adds a :use_pl_build_tools setting to the project settings
+for the puppet-agent package. When set to false, the projected will
+avoid using components from pl-build-tools. The default value is set
+to true to preserve existing behavior.
+---
+ configs/projects/puppet-agent.rb | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/configs/projects/puppet-agent.rb b/configs/projects/puppet-agent.rb
+index fb23b9fe..899c0b4e 100644
+--- a/configs/projects/puppet-agent.rb
++++ b/configs/projects/puppet-agent.rb
+@@ -15,6 +15,9 @@ project "puppet-agent" do |proj|
+   sha1sum_uri = "#{settings_uri}.sha1"
+   metadata_uri = File.join(runtime_details['location'], "#{proj.settings[:puppet_runtime_basename]}.json")
+   proj.inherit_yaml_settings(settings_uri, sha1sum_uri, metadata_uri: metadata_uri)
++  unless settings.key?(:use_pl_build_tools)
++    settings[:use_pl_build_tools] = true
++  end
+ 
+   # (PA-678) pe-r10k versions prior to 2.5.0.0 ship gettext gems.
+   # Since we also ship those gems as part of puppet-agent
+@@ -109,8 +112,9 @@ project "puppet-agent" do |proj|
+     proj.component "shellpath"
+   end
+ 
+-  proj.component "runtime" if platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
+-                              !platform.is_linux?
++  proj.component "runtime" if settings[:use_pl_build_tools] &&
++                              ( platform.name =~ /debian-[89]|el-[567]|redhatfips-7|sles-(:?11|12)|ubuntu-(:?14.04|16.04|18.04)/ ||
++                                !platform.is_linux? )
+ 
+   # Windows doesn't need these wrappers, only unix platforms
+   unless platform.is_windows?
+@@ -134,7 +138,7 @@ project "puppet-agent" do |proj|
+   # Set the $DEV_BUILD environment variable to leave headers in place.
+   proj.component "cleanup"
+ 
+-  proj.component "pl-ruby-patch"
++  proj.component "pl-ruby-patch" if settings[:use_pl_build_tools]
+ 
+   unless ENV['DEV_BUILD'].to_s.empty?
+     proj.settings[:dev_build] = true
+-- 
+2.28.0
+

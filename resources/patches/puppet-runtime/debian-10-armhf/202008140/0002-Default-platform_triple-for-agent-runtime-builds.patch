@@ -1,0 +1,30 @@
+From 72126b7df63906d4a3d4f659bd66c87a0ed31630 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 10:15:47 -0700
+Subject: [PATCH 02/11] Default platform_triple for agent-runtime builds
+
+This commit updates the agent-runtime settings to use the
+`platform_triple` set in the platform definition if none
+of the special cases match. This change allows new platforms
+to be added without modifying the agent-runtime settings
+to add new special cases.
+---
+ configs/projects/_shared-agent-settings.rb | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 2992d7a..d06d8ec 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -103,6 +103,8 @@ platform_triple = "powerpc64le-linux-gnu" if platform.architecture == "ppc64el"
+ platform_triple = "arm-linux-gnueabihf" if platform.name == 'debian-8-armhf'
+ platform_triple = "arm-linux-gnueabi" if platform.name == 'debian-8-armel'
+ platform_triple = "aarch64-redhat-linux" if platform.name == 'el-7-aarch64'
++# Default to what was set in the platform definition.
++platform_triple ||= platform.platform_triple
+ 
+ if platform.is_windows?
+   proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby.exe"))
+-- 
+2.28.0
+
