@@ -7,6 +7,9 @@ component 'puppet-runtime' do |pkg, settings, platform|
   # Ensure Vanagon does not try to use internal Puppet Inc. mirrors when
   # downloading sources.
   pkg.environment('VANAGON_USE_MIRRORS', 'n')
+  # Pull in patch to work around `-e local` being ignored during build:
+  #   https://tickets.puppetlabs.com/browse/VANAGON-163:w
+  pkg.environment('VANAGON_LOCATION', 'https://github.com/Sharpie/vanagon.git#09f8b38')
 
   if Dir.exist?("resources/patches/puppet-runtime/#{platform.name}")
     patch_sets = Dir.entries("resources/patches/puppet-runtime/#{platform.name}").select {|e| e.match(/^\d+/)}.map {|p| Gem::Version.new(p) }
