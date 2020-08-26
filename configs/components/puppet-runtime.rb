@@ -21,7 +21,8 @@ component 'puppet-runtime' do |pkg, settings, platform|
   end
 
   pkg.configure do
-    ['bundle install --path=.bundle/lib']
+    ['bundle config set path .bundle/lib',
+     'bundle install']
   end
 
   pkg.build do

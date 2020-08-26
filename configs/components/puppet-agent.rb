@@ -23,7 +23,8 @@ component 'puppet-agent' do |pkg, settings, platform|
   end
 
   pkg.configure do
-    ['bundle install --path=.bundle/lib',
+    ['bundle config set path .bundle/lib',
+     'bundle install',
      %(sed -Eie "s|http[^\\"]+|file://$(realpath puppet-runtime/output)|" configs/components/puppet-runtime.json)]
   end
 
