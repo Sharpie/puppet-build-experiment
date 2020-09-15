@@ -232,6 +232,7 @@ jobs:
 
 
   ship:
+    if: "github.event.client_payload.ship == 'true'"
     runs-on: ubuntu-18.04
     needs:
       - test-puppet-agent
