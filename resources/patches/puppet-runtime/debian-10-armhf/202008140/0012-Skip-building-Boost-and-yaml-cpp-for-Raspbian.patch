@@ -1,0 +1,31 @@
+From baa5a7b52dd2c29b67b3b7a37a6d33b14c0f93cd Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 15 Sep 2020 10:37:46 -0700
+Subject: [PATCH 12/12] Skip building Boost and yaml-cpp for Raspbian
+
+This commit updates the `agent-runtime-master` project to skip Boost and
+yaml-cpp when building for Raspbian. The `puppet-agent` build will use
+the official Debian packages instead.
+---
+ configs/projects/agent-runtime-master.rb | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/configs/projects/agent-runtime-master.rb b/configs/projects/agent-runtime-master.rb
+index 7291048..1bc3469 100644
+--- a/configs/projects/agent-runtime-master.rb
++++ b/configs/projects/agent-runtime-master.rb
+@@ -40,8 +40,9 @@ project 'agent-runtime-master' do |proj|
+     proj.component 'rubygem-sys-filesystem'
+   end
+ 
+-  proj.component 'boost'
+-  proj.component 'yaml-cpp'
++  # Skip cross-compiling C++ projects for Raspbian
++  proj.component 'boost' unless platform.name =~ /debian-\d+-armhf/
++  proj.component 'yaml-cpp' unless platform.name =~ /debian-\d+-armhf/
+ 
+   if platform.is_windows?
+     proj.component 'rubygem-win32-dir'
+-- 
+2.28.0
+

@@ -1,0 +1,63 @@
+From 2eae33978093d2b07deb033f252a873e8e932e0b Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 15 Sep 2020 10:45:39 -0700
+Subject: [PATCH 7/7] Build puppet-agent with Debian Boost and yaml-cpp
+
+This patch updates the Raspbian dependencies and build dependencies
+for `puppet-agent` to use the Boost and yaml-cpp libraries from
+the OS repos.
+---
+ configs/components/puppet-runtime.rb | 14 ++++++++++++++
+ configs/platforms/debian-10-armhf.rb | 11 +++++++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/configs/components/puppet-runtime.rb b/configs/components/puppet-runtime.rb
+index 5467afe9..6dd7da7a 100644
+--- a/configs/components/puppet-runtime.rb
++++ b/configs/components/puppet-runtime.rb
+@@ -33,6 +33,20 @@ component 'puppet-runtime' do |pkg, settings, platform|
+     pkg.build_requires 'runtime'
+   end
+ 
++  if platform.name =~ /debian-\d+-armhf/
++    pkg.requires 'libboost-chrono1.67.0'
++    pkg.requires 'libboost-date-time1.67.0'
++    pkg.requires 'libboost-filesystem1.67.0'
++    pkg.requires 'libboost-locale1.67.0'
++    pkg.requires 'libboost-log1.67.0'
++    pkg.requires 'libboost-program-options1.67.0'
++    pkg.requires 'libboost-random1.67.0'
++    pkg.requires 'libboost-regex1.67.0'
++    pkg.requires 'libboost-system1.67.0'
++    pkg.requires 'libboost-thread1.67.0'
++    pkg.requires 'libyaml-cpp0.6'
++  end
++
+   # Even though puppet's ruby comes from puppet-runtime, we still need a ruby
+   # to build with on these platforms:
+   if platform.architecture == "sparc"
+diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
+index 237f854a..b87d7ff4 100644
+--- a/configs/platforms/debian-10-armhf.rb
++++ b/configs/platforms/debian-10-armhf.rb
+@@ -42,6 +42,17 @@ platform 'debian-10-armhf' do |plat|
+     "libffi-dev:#{plat.get_architecture}",
+     "libreadline-dev:#{plat.get_architecture}",
+     "libselinux1-dev:#{plat.get_architecture}",
++    "libboost-chrono-dev:#{plat.get_architecture}",
++    "libboost-date-time-dev:#{plat.get_architecture}",
++    "libboost-filesystem-dev:#{plat.get_architecture}",
++    "libboost-locale-dev:#{plat.get_architecture}",
++    "libboost-log-dev:#{plat.get_architecture}",
++    "libboost-program-options-dev:#{plat.get_architecture}",
++    "libboost-random-dev:#{plat.get_architecture}",
++    "libboost-regex-dev:#{plat.get_architecture}",
++    "libboost-system-dev:#{plat.get_architecture}",
++    "libboost-thread-dev:#{plat.get_architecture}",
++    "libyaml-cpp-dev:#{plat.get_architecture}",
+     'make',
+     'openjdk-11-jdk-headless',
+     'pkg-config',
+-- 
+2.28.0
+
