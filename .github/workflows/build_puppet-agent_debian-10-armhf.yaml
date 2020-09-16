@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build
     env:
-      VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
+      VANAGON_DOCKER_IMAGE: 'ghcr.io/sharpie/raspbian-10-armhf:latest'
       TEST_REPO: 'https://github.com/puppetlabs/puppet-agent'
       TEST_COMPONENT: puppet-agent
     steps:
@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build
     env:
-      VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
+      VANAGON_DOCKER_IMAGE: 'ghcr.io/sharpie/raspbian-10-armhf:latest'
       TEST_REPO: 'https://github.com/puppetlabs/facter'
       TEST_COMPONENT: facter
     steps:
