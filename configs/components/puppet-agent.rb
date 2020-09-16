@@ -10,8 +10,8 @@ component 'puppet-agent' do |pkg, settings, platform|
   # downloading sources.
   pkg.environment('VANAGON_USE_MIRRORS', 'n')
   # Pull in patch to work around `-e local` being ignored during build:
-  #   https://tickets.puppetlabs.com/browse/VANAGON-163:w
-  pkg.environment('VANAGON_LOCATION', 'https://github.com/Sharpie/vanagon.git#09f8b38')
+  #   https://tickets.puppetlabs.com/browse/VANAGON-163
+  pkg.environment('VANAGON_LOCATION', 'https://github.com/puppetlabs/vanagon.git#00fe427')
 
   if Dir.exist?("resources/patches/puppet-agent/#{platform.name}")
     patch_sets = Dir.entries("resources/patches/puppet-agent/#{platform.name}").select {|e| e.match(/^\d+/)}.map {|p| Gem::Version.new(p) }
