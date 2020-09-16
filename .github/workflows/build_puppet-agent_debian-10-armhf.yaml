@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
         with:
@@ -28,11 +28,17 @@ jobs:
             --interactive=false \
             --user=sharpie \
             --key="${BT_API_KEY}"
-      - name: Provision build environment
+      - name: Setup QEMU
         run: |
           sudo apt update
-          sudo apt install -y qemu-user-static
-
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -LO http://http.us.debian.org/debian/pool/main/q/qemu/qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+      - name: Provision build environment
+        run: |
           gem install bundler
           bundle config set path '.bundle/lib'
           bundle install
@@ -100,7 +106,7 @@ jobs:
 
 
   test-puppet-agent:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: build
     env:
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
@@ -117,10 +123,17 @@ jobs:
         with:
           name: vanagon-output.tar
           path: output
-      - name: Provision test environment
+      - name: Setup QEMU
         run: |
           sudo apt update
-          sudo apt install -y qemu-user-static
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -LO http://http.us.debian.org/debian/pool/main/q/qemu/qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+      - name: Provision test environment
+        run: |
           gem install bundler
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
@@ -161,7 +174,7 @@ jobs:
 
 
   test-facter:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: build
     env:
       VANAGON_DOCKER_IMAGE: 'sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest'
@@ -178,10 +191,17 @@ jobs:
         with:
           name: vanagon-output.tar
           path: output
-      - name: Provision test environment
+      - name: Setup QEMU
         run: |
           sudo apt update
-          sudo apt install -y qemu-user-static
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -LO http://http.us.debian.org/debian/pool/main/q/qemu/qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+      - name: Provision test environment
+        run: |
           gem install bundler
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
@@ -233,7 +253,7 @@ jobs:
 
   ship:
     if: "github.event.client_payload.ship == 'true'"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs:
       - test-puppet-agent
       - test-facter
