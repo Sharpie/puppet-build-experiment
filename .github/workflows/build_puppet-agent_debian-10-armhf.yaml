@@ -68,7 +68,7 @@ jobs:
             jfrog bt upload --flat \
               'output/puppet-runtime/output/agent-runtime-*' \
               "${BINTRAY_VERSION}" \
-              "puppet-runtime/${VANAGON_BUILD_VERSION}/"
+              "puppet-runtime/${VANAGON_BUILD_VERSION}/" || true
           fi
       - name: Build puppet-agent
         run: |
@@ -97,7 +97,7 @@ jobs:
               --deb buster/puppet-experimental/armhf \
               'output/deb/buster/PC1/*.deb' \
               "${BINTRAY_VERSION}" \
-              "pool/buster/puppet-experimental/p/puppet-agent/"
+              "pool/buster/puppet-experimental/p/puppet-agent/" || true
           fi
       - uses: actions/upload-artifact@v1
         with:
