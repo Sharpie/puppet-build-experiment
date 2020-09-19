@@ -1,7 +1,7 @@
 ---
 HOSTS:
   debian10-32-1:
-    image: sharpie-docker-puppet-dev-images.bintray.io/raspbian-10-armhf:latest
+    image: ghcr.io/sharpie/raspbian-10-armhf:latest
     platform: debian-10-arm32
     packaging_platform: debian-10-armhf
     docker_image_commands:
