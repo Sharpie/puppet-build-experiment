@@ -160,15 +160,20 @@ jobs:
 
           cd "${TEST_COMPONENT}/acceptance"
 
-          # Filter test cases that are expected to fail.
-          #
-          # ensure_puppet_facts_can_use_facter_ng.rb: facter-ng doesn't know what to make of Raspbian
-          # ensure_facter_3_and_facter_4_output_matches.rb: facter-ng can't resolve networking facts
-          #   properly under Docker+QEMU.
-          export TESTS=$(find tests -type f \
-                           -not -path tests/ensure_puppet_facts_can_use_facter_ng.rb \
-                           -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
-                         | paste -s -d, -)
+
+          # Facter 4 tests should pass starting with version 6.18.0
+          facter4_tests_pass=$(printf '%s\n%s' "6.18.0" "${PUPPET_AGENT_VERSION}"|sort -V|head -n1)
+          if [[ $facter4_tests_pass != 6.18.0 ]]; then
+            # Filter test cases that are expected to fail.
+            #
+            # ensure_puppet_facts_can_use_facter_ng.rb: facter-ng doesn't know what to make of Raspbian
+            # ensure_facter_3_and_facter_4_output_matches.rb: facter-ng can't resolve networking facts
+            #   properly under Docker+QEMU.
+            export TESTS=$(find tests -type f \
+                             -not -path tests/ensure_puppet_facts_can_use_facter_ng.rb \
+                             -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
+                           | paste -s -d, -)
+          fi
 
           bundle exec rake 'ci:test:aio[true]'
 
