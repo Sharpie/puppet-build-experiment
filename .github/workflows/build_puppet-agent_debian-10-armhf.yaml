@@ -173,6 +173,15 @@ jobs:
                              -not -path tests/ensure_puppet_facts_can_use_facter_ng.rb \
                              -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
                            | paste -s -d, -)
+          else
+            # Filter test cases that are expected to fail.
+            #
+            # ensure_facter_3_and_facter_4_output_matches.rb:
+            #   facter-ng prefers /etc/os-release and thus correctly reports
+            #   Raspbian. facter 3 sees /etc/debian_version and reports Debian.
+            export TESTS=$(find tests -type f \
+                             -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
+                           | paste -s -d, -)
           fi
 
           bundle exec rake 'ci:test:aio[true]'
