@@ -1,4 +1,4 @@
-From 2eae33978093d2b07deb033f252a873e8e932e0b Mon Sep 17 00:00:00 2001
+From 12fba233d803f9a687e8832a61edd915af33d7c9 Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Tue, 15 Sep 2020 10:45:39 -0700
 Subject: [PATCH 7/7] Build puppet-agent with Debian Boost and yaml-cpp
@@ -37,10 +37,10 @@ index 5467afe9..6dd7da7a 100644
    # to build with on these platforms:
    if platform.architecture == "sparc"
 diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
-index 237f854a..b87d7ff4 100644
+index d07f90b0..c3c124c9 100644
 --- a/configs/platforms/debian-10-armhf.rb
 +++ b/configs/platforms/debian-10-armhf.rb
-@@ -42,6 +42,17 @@ platform 'debian-10-armhf' do |plat|
+@@ -32,6 +32,17 @@ platform 'debian-10-armhf' do |plat|
      "libffi-dev:#{plat.get_architecture}",
      "libreadline-dev:#{plat.get_architecture}",
      "libselinux1-dev:#{plat.get_architecture}",

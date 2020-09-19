@@ -1,22 +1,22 @@
-From aef0809a2df64cb51e015344f59b8b87e4091941 Mon Sep 17 00:00:00 2001
+From 35927abd8adb299049e48b90077d0f616cf6470e Mon Sep 17 00:00:00 2001
 From: Charlie Sharpsteen <source@sharpsteen.net>
 Date: Tue, 25 Aug 2020 08:05:39 -0700
-Subject: [PATCH 6/6] Add platform definition for debian-10-armhf
+Subject: [PATCH 6/7] Add platform definition for debian-10-armhf
 
 This commit adds a platform definition that cross-compiles binaries
 for debian-10-armhf using debian-10-amd64 as a host platform running
 the Debian crossbuild-essential toolchain.
 ---
- configs/platforms/debian-10-armhf.rb | 76 ++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ configs/platforms/debian-10-armhf.rb | 66 ++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
  create mode 100644 configs/platforms/debian-10-armhf.rb
 
 diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
 new file mode 100644
-index 00000000..237f854a
+index 00000000..d07f90b0
 --- /dev/null
 +++ b/configs/platforms/debian-10-armhf.rb
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,66 @@
 +platform 'debian-10-armhf' do |plat|
 +  plat.servicedir '/lib/systemd/system'
 +  plat.defaultdir '/etc/default'
@@ -36,16 +36,6 @@ index 00000000..237f854a
 +  #             such a thing and fails.
 +  plat.provision_with 'mkdir -p /usr/share/man/man1'
 +  plat.provision_with "dpkg --add-architecture #{plat.get_architecture}"
-+
-+  # MORE STORY TIME: Ubuntu doesn't keep all of its architectures in one
-+  #                  spot (because that would just make too much sense).
-+  #                  Therefore, adding arm64 above will cause
-+  #                  `apt update` to be very sad. So, we have to lock
-+  #                  the default repos to amd64.
-+  plat.provision_with "sed -i 's/^deb/deb [arch=amd64]/' /etc/apt/sources.list"
-+  #  ...and then create copies for arm64 that use the ports archive
-+  # see: https://askubuntu.com/questions/430705/how-to-use-apt-get-to-download-multi-arch-library
-+  plat.provision_with "sed -E -e 's/amd64/#{plat.get_architecture}/' -e 's/(archive|security).ubuntu.com\\/ubuntu/ports.ubuntu.com/' /etc/apt/sources.list > /etc/apt/sources.list.d/ports.list"
 +
 +  packages = [
 +    'build-essential',
