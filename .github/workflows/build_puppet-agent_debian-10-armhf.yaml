@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - uses: actions/setup-ruby@v1.1.0
@@ -113,7 +113,7 @@ jobs:
       TEST_REPO: 'https://github.com/puppetlabs/puppet-agent'
       TEST_COMPONENT: puppet-agent
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - uses: actions/setup-ruby@v1.1.0
@@ -195,7 +195,7 @@ jobs:
       TEST_REPO: 'https://github.com/puppetlabs/facter'
       TEST_COMPONENT: facter
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - uses: actions/setup-ruby@v1.1.0
@@ -262,7 +262,7 @@ jobs:
       - test-puppet-agent
       - test-facter
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - uses: actions/setup-ruby@v1.1.0
