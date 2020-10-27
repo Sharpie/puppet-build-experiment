@@ -36,7 +36,7 @@ jobs:
           # recent kernels, glibc, and systemd.
           cd /tmp
           curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.1%2Bdfsg-4%2Bb1_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
       - name: Provision build environment
         run: |
           gem install bundler
@@ -131,7 +131,7 @@ jobs:
           # recent kernels, glibc, and systemd.
           cd /tmp
           curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.1%2Bdfsg-4%2Bb1_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
       - name: Provision test environment
         run: |
           gem install bundler
@@ -213,7 +213,7 @@ jobs:
           # recent kernels, glibc, and systemd.
           cd /tmp
           curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.1%2Bdfsg-4%2Bb1_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
       - name: Provision test environment
         run: |
           gem install bundler
