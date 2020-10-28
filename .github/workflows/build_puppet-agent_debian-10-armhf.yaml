@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/setup-ruby@v1.1.0
+      - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.5.x'
       - uses: jfrog/setup-jfrog-cli@v1
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/setup-ruby@v1.1.0
+      - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.5.x'
       - uses: actions/download-artifact@v1
@@ -198,7 +198,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/setup-ruby@v1.1.0
+      - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.5.x'
       - uses: actions/download-artifact@v1
@@ -265,7 +265,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: actions/setup-ruby@v1.1.0
+      - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.5.x'
       - name: Ship puppet-agent
