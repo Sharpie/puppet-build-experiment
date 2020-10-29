@@ -138,7 +138,7 @@ jobs:
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
           test_package=$(find "${GITHUB_WORKSPACE}/output" -type f -name 'puppet-agent_*.deb')
-          printf 'name=TEST_PUPPET_PACKAGE::%s\n' "${test_package}" >> "${GITHUB_ENV}"
+          printf 'TEST_PUPPET_PACKAGE=%s\n' "${test_package}" >> "${GITHUB_ENV}"
 
           test_version="${PUPPET_AGENT_VERSION}"
           git clone "${TEST_REPO}" "${TEST_COMPONENT}"
@@ -220,7 +220,7 @@ jobs:
           docker pull "${VANAGON_DOCKER_IMAGE}"
 
           test_package=$(find "${GITHUB_WORKSPACE}/output" -type f -name 'puppet-agent_*.deb')
-          printf 'name=TEST_PUPPET_PACKAGE::%s\n' "${test_package}" >> "${GITHUB_ENV}"
+          printf 'TEST_PUPPET_PACKAGE=%s\n' "${test_package}" >> "${GITHUB_ENV}"
 
           test_version=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" "${TEST_COMPONENT}")
           git clone "${TEST_REPO}" "${TEST_COMPONENT}"
