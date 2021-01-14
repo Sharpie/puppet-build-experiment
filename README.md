@@ -51,7 +51,7 @@ chmod 0600 vagrant
 export VANAGON_SSH_KEY="${PWD}/vagrant"
 export VANAGON_SSH_PORT=4222
 
-export VANAGON_DOCKER_IMAGE='sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64:latest'
+export VANAGON_DOCKER_IMAGE='ghcr.io/sharpie/debian-10-amd64:latest'
 docker pull "${VANAGON_DOCKER_IMAGE}"
 export VANAGON_DOCKER_RUN_ARGS=$(docker inspect "${VANAGON_DOCKER_IMAGE}" --format '{{ index .Config.Labels "docker-run-args" }}')
 
