@@ -25,8 +25,8 @@ jobs:
           # However, we need the latest version of QEMU to fix bugs with
           # recent kernels, glibc, and systemd.
           cd /tmp
-          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2%2Bdfsg-10_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
+          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-10_amd64.deb'
+          sudo apt install -y ./qemu-user-static_5.2+dfsg-10_amd64.deb
       - name: Provision build environment
         run: |
           gem install bundler
@@ -77,8 +77,8 @@ jobs:
           # However, we need the latest version of QEMU to fix bugs with
           # recent kernels, glibc, and systemd.
           cd /tmp
-          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2%2Bdfsg-10_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
+          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-10_amd64.deb'
+          sudo apt install -y ./qemu-user-static_5.2+dfsg-10_amd64.deb
       - name: Provision test environment
         run: |
           gem install bundler
@@ -159,8 +159,8 @@ jobs:
           # However, we need the latest version of QEMU to fix bugs with
           # recent kernels, glibc, and systemd.
           cd /tmp
-          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2%2Bdfsg-10_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.1+dfsg-4+b1_amd64.deb
+          curl -fLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-10_amd64.deb'
+          sudo apt install -y ./qemu-user-static_5.2+dfsg-10_amd64.deb
       - name: Provision test environment
         run: |
           gem install bundler
