@@ -7,7 +7,6 @@ on:
 
 env:
   PUPPET_AGENT_VERSION: '${{ github.event.client_payload.version }}'
-  REBUILD: '${{ github.event.client_payload.rebuild }}'
 
 jobs:
   build:
@@ -19,15 +18,6 @@ jobs:
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.5.x'
-      - uses: jfrog/setup-jfrog-cli@v1
-      - name: Configure Bintray
-        env:
-          BT_API_KEY: '${{ secrets.BT_API_KEY }}'
-        run: |
-          jfrog bt config \
-            --interactive=false \
-            --user=sharpie \
-            --key="${BT_API_KEY}"
       - name: Setup QEMU
         run: |
           sudo apt update
@@ -45,60 +35,17 @@ jobs:
       - name: Build puppet-runtime
         run: |
           export VANAGON_BUILD_VERSION=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
-          BINTRAY_VERSION="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
-          if [[ -z "${REBUILD}" ]] && jfrog bt version-show "${BINTRAY_VERSION}"; then
-            printf 'Downloading puppet-runtime %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
+          printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
 
-            mkdir -p output/puppet-runtime/output
-            mkdir -p stage/puppet-runtime
-
-            jfrog bt download-ver --flat --unpublished \
-              "${BINTRAY_VERSION}" \
-              stage/puppet-runtime/
-
-            # --flat isn't having the desired effect as download-ver still
-            # re-creates the folder structure from BinTray
-            find stage/puppet-runtime -type f -exec mv -t output/puppet-runtime/output {} +
-          else
-            printf 'Building puppet-runtime %s\n' "${VANAGON_BUILD_VERSION}"
-
-            bundle exec build puppet-runtime debian-10-armhf -e docker
-
-            jfrog bt upload --flat \
-              'output/puppet-runtime/output/agent-runtime-*' \
-              "${BINTRAY_VERSION}" \
-              "puppet-runtime/${VANAGON_BUILD_VERSION}/" || true
-          fi
+          bundle exec build puppet-runtime debian-10-armhf -e docker
       - name: Build puppet-agent
         run: |
           export VANAGON_BUILD_VERSION="${PUPPET_AGENT_VERSION}"
-          BINTRAY_VERSION="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${VANAGON_BUILD_VERSION}"
 
-          if [[ -z "${REBUILD}" ]] && jfrog bt version-show "${BINTRAY_VERSION}"; then
-            printf 'Downloading puppet-agent %s from BinTray\n' "${VANAGON_BUILD_VERSION}"
+          printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
 
-            mkdir -p output/deb/buster/PC1
-            mkdir stage/puppet-agent
-
-            jfrog bt download-ver --flat --unpublished \
-              "${BINTRAY_VERSION}" \
-              stage/puppet-agent/
-
-            # --flat isn't having the desired effect as download-ver still
-            # re-creates the folder structure from BinTray
-            find stage/puppet-agent -type f -exec mv -t output/deb/buster/PC1 {} +
-          else
-            printf 'Building puppet-agent %s\n' "${VANAGON_BUILD_VERSION}"
-
-            bundle exec build puppet-agent debian-10-armhf -e docker
-
-            jfrog bt upload --flat \
-              --deb buster/puppet-experimental/armhf \
-              'output/deb/buster/PC1/*.deb' \
-              "${BINTRAY_VERSION}" \
-              "pool/buster/puppet-experimental/p/puppet-agent/" || true
-          fi
+          bundle exec build puppet-agent debian-10-armhf -e docker
       - uses: actions/upload-artifact@v1
         with:
           name: vanagon-output.tar
@@ -253,39 +200,3 @@ jobs:
                          -not -path tests/facts/ruby.rb | paste -s -d, -)
 
           bundle exec rake 'ci:test:aio[true]'
-
-
-  ship:
-    if: "github.event.client_payload.ship == 'true'"
-    runs-on: ubuntu-20.04
-    needs:
-      - test-puppet-agent
-      - test-facter
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      - uses: actions/setup-ruby@v1
-        with:
-          ruby-version: '2.5.x'
-      - name: Ship puppet-agent
-        env:
-          BT_API_KEY: '${{ secrets.BT_API_KEY }}'
-          BT_GPG_KEY: '${{ secrets.BT_GPG_KEY }}'
-        run: |
-          runtime_version=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" puppet-runtime)
-          runtime_release="sharpie/puppet-agent-bin/puppet-runtime-raspbian-10-armhf/${runtime_version}"
-          agent_release="sharpie/puppet-experimental-debs/puppet-agent-raspbian-10-armhf/${PUPPET_AGENT_VERSION}"
-
-          # This is done manually as the JFrog CLI cannot pass GPG passwords
-          # to version-publish. The password is required to sign repository
-          # metadata.
-          curl -X POST \
-            -u "sharpie:${BT_API_KEY}" \
-            "https://api.bintray.com/content/${runtime_release}/publish"
-
-          curl -X POST \
-            -u "sharpie:${BT_API_KEY}" \
-            -H "X-GPG-PASSPHRASE: ${BT_GPG_KEY}" \
-            "https://api.bintray.com/content/${agent_release}/publish"
-
