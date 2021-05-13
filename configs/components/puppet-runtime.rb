@@ -23,13 +23,22 @@ component 'puppet-runtime' do |pkg, settings, platform|
     end
   end
 
+  # TODO: This only accounts for puppet-runtime components required to
+  #       build puppet-agent 6.x. This logic will need to be extended
+  #       to support 7.x.
+  project_name = if Gem::Requirement.new('>= 202012140').satisfied_by?(settings[:version])
+                   'agent-runtime-6.x'
+                 else
+                   'agent-runtime-master'
+                 end
+
   pkg.configure do
     ['bundle config set path .bundle/lib',
      'bundle install']
   end
 
   pkg.build do
-    ["bundle exec build agent-runtime-master #{platform.name} -e local"]
+    ["bundle exec build #{project_name} #{platform.name} -e local"]
   end
 
   # This combines with projects/puppet-runtime.rb to copy the output/
