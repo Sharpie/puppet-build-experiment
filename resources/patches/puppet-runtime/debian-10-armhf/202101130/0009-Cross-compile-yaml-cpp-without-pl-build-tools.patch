@@ -1,0 +1,36 @@
+From 0337d19c1d88904c6643adbd8e1b102f57ff8362 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 17:03:32 -0700
+Subject: [PATCH 09/12] Cross-compile yaml-cpp without pl-build-tools
+
+This commit updates the settings and components related to yaml-cpp
+to allow it to be cross-compiled when the use_pl_build_tools setting
+is set to `false` for a platform.
+---
+ configs/components/yaml-cpp.rb | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/yaml-cpp.rb b/configs/components/yaml-cpp.rb
+index 1945925..cbe372e 100644
+--- a/configs/components/yaml-cpp.rb
++++ b/configs/components/yaml-cpp.rb
+@@ -8,7 +8,7 @@ component "yaml-cpp" do |pkg, settings, platform|
+   make = 'make'
+   mkdir = 'mkdir'
+ 
+-  if platform.is_cross_compiled_linux?
++  if settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     # We're using the x86_64 version of cmake
+     cmake = "/opt/pl-build-tools/bin/cmake"
+     cmake_toolchain_file = "-DPL_TOOLS_ROOT=/opt/freeware -DCMAKE_TOOLCHAIN_FILE=#{settings[:tools_root]}/#{settings[:platform_triple]}/pl-build-toolchain.cmake"
+@@ -37,6 +37,7 @@ component "yaml-cpp" do |pkg, settings, platform|
+     pkg.environment 'CPPFLAGS', settings[:cppflags]
+     pkg.environment 'CFLAGS', settings[:cflags]
+     pkg.environment 'LDFLAGS', settings[:ldflags]
++    cmake_toolchain_file = settings[:cmake_toolchain]
+   end
+ 
+   # Build Commands
+-- 
+2.31.1
+

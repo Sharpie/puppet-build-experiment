@@ -1,0 +1,56 @@
+From c67e2bce563efd0f9a57e208cc4cae677922241f Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 10:21:34 -0700
+Subject: [PATCH 04/12] Cross-compile openssl-1.1.1 without pl-build-tools
+
+This commit updates the openssl-1.1.1 component to allow
+cross-compilation without the pl-build-tools package.
+This configuration can be activated by setting `:use_pl_build_tools`
+to false in the platform definition and providing a value for
+the `:cc` setting that points to the desired cross-compiler.
+---
+ configs/components/openssl-1.1.1.rb | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/configs/components/openssl-1.1.1.rb b/configs/components/openssl-1.1.1.rb
+index bdfc887..015b46b 100644
+--- a/configs/components/openssl-1.1.1.rb
++++ b/configs/components/openssl-1.1.1.rb
+@@ -27,8 +27,15 @@ component 'openssl' do |pkg, settings, platform|
+     cflags = settings[:cflags]
+     ldflags = settings[:ldflags]
+   elsif platform.is_cross_compiled_linux?
+-    pkg.environment 'PATH', "/opt/pl-build-tools/bin:$$PATH"
+-    pkg.environment 'CC', "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
++    if settings[:use_pl_build_tools]
++      pkg.environment 'PATH', "/opt/pl-build-tools/bin:$$PATH" if settings[:use_pl_build_tools]
++      pkg.environment 'CC', "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
++      ldflags = "-Wl,-rpath=/opt/pl-build-tools/#{settings[:platform_triple]}/lib -Wl,-rpath=#{settings[:libdir]} -L/opt/pl-build-tools/#{settings[:platform_triple]}/lib"
++    else
++      pkg.environment 'CC', settings[:cc]
++      cflags = settings[:cflags]
++      ldflags = "#{settings[:ldflags]} -Wl,-z,relro"
++    end
+ 
+     cflags = "#{settings[:cflags]} -fPIC"
+     if platform.architecture =~ /aarch/
+@@ -37,7 +44,6 @@ component 'openssl' do |pkg, settings, platform|
+       cflags += " -O2"
+     end
+ 
+-    ldflags = "-Wl,-rpath=/opt/pl-build-tools/#{settings[:platform_triple]}/lib -Wl,-rpath=#{settings[:libdir]} -L/opt/pl-build-tools/#{settings[:platform_triple]}/lib"
+     target = if platform.architecture == 'aarch64'
+                 'linux-aarch64'
+               elsif platform.name =~ /debian-8-arm/
+@@ -83,7 +89,7 @@ component 'openssl' do |pkg, settings, platform|
+   # BUILD REQUIREMENTS
+   ####################
+ 
+-  pkg.build_requires "runtime-#{settings[:runtime_project]}"
++  pkg.build_requires "runtime-#{settings[:runtime_project]}" if settings[:use_pl_build_tools]
+ 
+   ###########
+   # CONFIGURE
+-- 
+2.31.1
+

@@ -1,0 +1,87 @@
+From 3443d969b2c5ccc8f24a7748a1f888090cac5d59 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 12:24:23 -0700
+Subject: [PATCH 07/12] Cross-compile Ruby gems without pl-build-tools
+
+This commit updates the settings and components related to ruby-augeas,
+ruby-ffi, ruby-selinux, and ruby-shadow to allow them to be cross-compiled
+when the use_pl_build_tools setting is set to `false` for a platform.
+---
+ configs/components/_base-ruby-augeas.rb  | 4 ++--
+ configs/components/_base-ruby-selinux.rb | 4 ++--
+ configs/components/ruby-shadow.rb        | 2 +-
+ configs/components/rubygem-ffi.rb        | 2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/configs/components/_base-ruby-augeas.rb b/configs/components/_base-ruby-augeas.rb
+index d669efd..75df04c 100644
+--- a/configs/components/_base-ruby-augeas.rb
++++ b/configs/components/_base-ruby-augeas.rb
+@@ -26,14 +26,14 @@ if platform.is_aix?
+ end
+ 
+ pkg.environment "CONFIGURE_ARGS", '--vendor'
+-pkg.environment "PKG_CONFIG_PATH", "#{File.join(settings[:libdir], 'pkgconfig')}:/usr/lib/pkgconfig"
++pkg.environment "PKG_CONFIG_PATH", "#{File.join(settings[:libdir], 'pkgconfig')}:/usr/lib/pkgconfig:/usr/lib/#{platform.platform_triple}/pkgconfig"
+ 
+ if platform.is_solaris?
+   if platform.architecture == 'sparc'
+     pkg.environment "RUBY", host_ruby
+   end
+   ruby = "#{host_ruby} -r#{settings[:datadir]}/doc/rbconfig-#{ruby_version}-orig.rb"
+-elsif platform.is_cross_compiled_linux?
++elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+   pkg.environment "RUBY", host_ruby
+   ruby = "#{host_ruby} -r#{settings[:datadir]}/doc/rbconfig-#{ruby_version}-orig.rb"
+   pkg.environment "LDFLAGS", settings[:ldflags]
+diff --git a/configs/components/_base-ruby-selinux.rb b/configs/components/_base-ruby-selinux.rb
+index 7eb44c5..f7428d0 100644
+--- a/configs/components/_base-ruby-selinux.rb
++++ b/configs/components/_base-ruby-selinux.rb
+@@ -39,7 +39,7 @@ cc = "/opt/pl-build-tools/bin/gcc"
+ system_include = "-I/usr/include"
+ ruby = "#{ruby_bindir}/ruby -rrbconfig"
+ 
+-if platform.is_cross_compiled_linux?
++if settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+   cc = "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-gcc"
+   system_include = "-I/opt/pl-build-tools/#{settings[:platform_triple]}/sysroot/usr/include"
+   pkg.environment "RUBY", host_ruby
+@@ -50,7 +50,7 @@ cflags = ""
+ 
+ # The platforms below use pl-build-tools
+ unless platform.name =~ /el-(5|6|7)|debian-(8|9)|ubuntu-(16|18)/
+-  cc = '/usr/bin/gcc'
++  cc = settings[:cc] || '/usr/bin/gcc'
+   cflags += "#{settings[:cppflags]} #{settings[:cflags]}"
+ end
+ 
+diff --git a/configs/components/ruby-shadow.rb b/configs/components/ruby-shadow.rb
+index 0490dbc..4df71e4 100644
+--- a/configs/components/ruby-shadow.rb
++++ b/configs/components/ruby-shadow.rb
+@@ -11,7 +11,7 @@ component "ruby-shadow" do |pkg, settings, platform|
+       pkg.environment "RUBY", settings[:host_ruby]
+     end
+     ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
+-  elsif platform.is_cross_compiled_linux?
++  elsif settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     pkg.environment "RUBY", settings[:host_ruby]
+     ruby = "#{settings[:host_ruby]} -r#{settings[:datadir]}/doc/rbconfig-#{settings[:ruby_version]}-orig.rb"
+   else
+diff --git a/configs/components/rubygem-ffi.rb b/configs/components/rubygem-ffi.rb
+index 75f9c92..b749892 100644
+--- a/configs/components/rubygem-ffi.rb
++++ b/configs/components/rubygem-ffi.rb
+@@ -64,7 +64,7 @@ component "rubygem-ffi" do |pkg, settings, platform|
+ 
+   pkg.environment 'PATH', '/opt/freeware/bin:/opt/pl-build-tools/bin:$(PATH)' if platform.is_aix?
+ 
+-  if platform.is_cross_compiled?
++  if settings[:use_pl_build_tools] && platform.is_cross_compiled?
+     base_ruby = case platform.name
+                 when /solaris-10/
+                   "/opt/csw/lib/ruby/2.0.0"
+-- 
+2.31.1
+

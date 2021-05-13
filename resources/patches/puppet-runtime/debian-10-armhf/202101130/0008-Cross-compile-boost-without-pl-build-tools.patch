@@ -1,0 +1,32 @@
+From 99b475ab3f29e8f7ed718a07d09087d7b8d640a4 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 15:42:31 -0700
+Subject: [PATCH 08/12] Cross-compile boost without pl-build-tools
+
+This commit updates the settings and components related to boost
+to allow it to be cross-compiled when the use_pl_build_tools setting
+is set to `false` for a platform.
+---
+ configs/components/boost.rb | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/configs/components/boost.rb b/configs/components/boost.rb
+index 5ccff9b..d832870 100644
+--- a/configs/components/boost.rb
++++ b/configs/components/boost.rb
+@@ -63,7 +63,11 @@ component "boost" do |pkg, settings, platform|
+     # library build will go back to using the cross-compiled
+     # g++.
+     pkg.environment "CXX" => "/usr/bin/g++"
+-    gpp = "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-g++"
++    gpp = if settings[:use_pl_build_tools]
++            "/opt/pl-build-tools/bin/#{settings[:platform_triple]}-g++"
++          else
++            settings[:cxx]
++          end
+   elsif platform.is_macos?
+     pkg.environment "PATH" => "/opt/pl-build-tools/bin:$$PATH"
+     linkflags = ""
+-- 
+2.31.1
+

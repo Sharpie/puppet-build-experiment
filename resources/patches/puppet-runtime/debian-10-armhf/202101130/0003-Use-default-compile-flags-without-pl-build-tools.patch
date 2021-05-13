@@ -1,0 +1,28 @@
+From 102a11a3668b1b4474ae47a129a9b86c27418f82 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 10:18:26 -0700
+Subject: [PATCH 03/12] Use default compile flags without pl-build-tools
+
+This commit updates the compiler flag selection for Linux to consider
+the `use_pl_build_tools` setting in addition to special casing by
+platform name.
+---
+ configs/projects/_shared-agent-settings.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 488e351..505a655 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -166,7 +166,7 @@ proj.setting(:ldflags, "-L#{proj.libdir} -L/opt/pl-build-tools/lib -Wl,-rpath=#{
+ # stack canary and full RELRO.
+ # We only do this on platforms that use their default OS toolchain since pl-gcc versions
+ # are too old to support these flags.
+-if platform.name =~ /sles-15|el-8|debian-10/ || platform.is_fedora?
++if (! settings[:use_pl_build_tools]) || platform.name =~ /sles-15|el-8|debian-10/ || platform.is_fedora?
+   proj.setting(:cppflags, "-I#{proj.includedir} -D_FORTIFY_SOURCE=2")
+   proj.setting(:cflags, '-fstack-protector-strong -fno-plt -O2')
+   proj.setting(:ldflags, "-L#{proj.libdir} -Wl,-rpath=#{proj.libdir},-z,relro,-z,now")
+-- 
+2.31.1
+

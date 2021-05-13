@@ -1,0 +1,27 @@
+From 27c44b7f8bbc2e9342182ed3f06606601da869c7 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 11:46:25 -0700
+Subject: [PATCH 05/12] Cross-compile curl without pl-build-tools
+
+This commit updates the curl component to allow it to be cross-compiled
+when the use_pl_build_tools setting is set to `false` for a platform.
+---
+ configs/components/curl.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/components/curl.rb b/configs/components/curl.rb
+index 8780028..af558b6 100644
+--- a/configs/components/curl.rb
++++ b/configs/components/curl.rb
+@@ -15,7 +15,7 @@ component 'curl' do |pkg, settings, platform|
+ 
+   pkg.build_requires "puppet-ca-bundle"
+ 
+-  if platform.is_cross_compiled_linux?
++  if settings[:use_pl_build_tools] && platform.is_cross_compiled_linux?
+     pkg.build_requires "runtime-#{settings[:runtime_project]}"
+     pkg.environment "PATH" => "/opt/pl-build-tools/bin:$(PATH):#{settings[:bindir]}"
+     pkg.environment "PKG_CONFIG_PATH" => "/opt/puppetlabs/puppet/lib/pkgconfig"
+-- 
+2.31.1
+

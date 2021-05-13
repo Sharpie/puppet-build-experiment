@@ -1,0 +1,136 @@
+From 8a076b0dc90cf4ec7d67fbb19d67de22f100c5f3 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Fri, 31 Jul 2020 12:19:08 -0700
+Subject: [PATCH 06/12] Cross-compile ruby-2.5.8 without pl-build-tools
+
+This commit updates the settings and components related to ruby-2.5.8
+to allow it to be cross-compiled when the use_pl_build_tools setting
+is set to `false` for a platform.
+
+The DTrace bindings for Ruby are also universally skipped if the plaform
+is being cross-compiled.
+
+The setup currently assumes that the cross-compiled ruby will be used
+by the build machine to install gems and run scripts. I.e. Linux binfmt
+will be configured to run the foreign binaries under QEMU emulation.
+
+This patch also updates the cross-compiled Ruby build to
+explicitly set the `--target` flag during configuration. This
+prevents Ruby's configure script from stripping the `gnu`
+suffix from the triplet, which in turn prevents RubyGems from
+"loosing" gems with compile extensions installed prior to an
+upgrade to RubyGems 3.1.0 or newer.
+
+Ref. rubygems/rubygems#2922
+Ref. ruby/ruby@5291197
+---
+ configs/components/_base-ruby.rb           |  6 ++++--
+ configs/components/pl-ruby-patch.rb        |  2 +-
+ configs/components/ruby-2.5.8.rb           | 13 +++++++++----
+ configs/projects/_shared-agent-settings.rb |  6 +++++-
+ 4 files changed, 19 insertions(+), 8 deletions(-)
+
+diff --git a/configs/components/_base-ruby.rb b/configs/components/_base-ruby.rb
+index 402ef60..812d5c5 100644
+--- a/configs/components/_base-ruby.rb
++++ b/configs/components/_base-ruby.rb
+@@ -21,7 +21,9 @@ ruby_bindir ||= settings[:ruby_bindir]
+ # ENVIRONMENT
+ #############
+ 
+-if platform.is_aix?
++if (! settings[:use_pl_build_tools])
++  pkg.environment "CC", settings[:cc]
++elsif platform.is_aix?
+   # We still use pl-gcc for AIX 7.1
+   pkg.environment "CC", "/opt/pl-build-tools/bin/gcc"
+   pkg.environment 'LDFLAGS', "#{settings[:ldflags]} -Wl,-bmaxdata:0x80000000"
+@@ -63,7 +65,7 @@ if platform.is_aix?
+ elsif platform.is_solaris?
+   pkg.build_requires "runtime-#{settings[:runtime_project]}"
+   pkg.build_requires "libedit" if platform.name =~ /^solaris-10-sparc/
+-elsif platform.is_cross_compiled_linux?
++elsif platform.is_cross_compiled_linux? && settings[:use_pl_build_tools]
+   pkg.build_requires "runtime-#{settings[:runtime_project]}"
+ end
+ 
+diff --git a/configs/components/pl-ruby-patch.rb b/configs/components/pl-ruby-patch.rb
+index ebb873c..bc244f5 100644
+--- a/configs/components/pl-ruby-patch.rb
++++ b/configs/components/pl-ruby-patch.rb
+@@ -7,7 +7,7 @@
+ #
+ # This component should also be present in the puppet-agent project
+ component "pl-ruby-patch" do |pkg, settings, platform|
+-  if platform.is_cross_compiled?
++  if settings[:use_pl_build_tools] && platform.is_cross_compiled?
+     ruby_api_version = settings[:ruby_version].gsub(/\.\d*$/, '.0')
+     base_ruby = case platform.name
+                 when /solaris-10/
+diff --git a/configs/components/ruby-2.5.8.rb b/configs/components/ruby-2.5.8.rb
+index 7da8104..7ffe084 100644
+--- a/configs/components/ruby-2.5.8.rb
++++ b/configs/components/ruby-2.5.8.rb
+@@ -43,7 +43,7 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+   # Patch for https://bugs.ruby-lang.org/issues/14972
+   pkg.apply_patch "#{base}/net_http_eof_14972_r2.5.patch"
+ 
+-  if platform.is_cross_compiled?
++  if platform.is_cross_compiled? && settings[:use_pl_build_tools]
+     pkg.apply_patch "#{base}/uri_generic_remove_safe_nav_operator_r2.5.patch"
+     if platform.name =~ /^solaris-10-sparc/
+       pkg.apply_patch "#{base}/Solaris-only-Replace-reference-to-RUBY-var-with-opt-pl-build-tool.patch"
+@@ -93,7 +93,12 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+     # than AIX 7.1.0.2 or something
+     special_flags += " --build=#{settings[:platform_triple]} "
+   elsif platform.is_cross_compiled_linux?
+-    special_flags += " --with-baseruby=#{host_ruby} "
++    # Explicitly pass target to prevent Ruby's config script from stripping
++    # the gnu suffix in the architecture triplet. This stripping breaks gems
++    # with compiled extensions if the user updates to RubyGems 3.1.0+ after
++    # the gem is installed.
++    special_flags += " --target=#{settings[:platform_triple]} "
++    special_flags += " --with-baseruby=#{host_ruby} " if settings[:use_pl_build_tools]
+   elsif platform.is_solaris? && platform.architecture == "sparc"
+     special_flags += " --with-baseruby=#{host_ruby} --enable-close-fds-by-recvmsg-with-peek "
+   elsif platform.is_windows?
+@@ -121,7 +126,7 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+     'windowsfips-2012r2-x64'
+   ]
+ 
+-  unless without_dtrace.include? platform.name
++  unless platform.is_cross_compiled? || without_dtrace.include?(platform.name)
+     special_flags += ' --enable-dtrace '
+   end
+ 
+@@ -189,7 +194,7 @@ component 'ruby-2.5.8' do |pkg, settings, platform|
+   rbconfig_changes = {}
+   if platform.is_aix?
+     rbconfig_changes["CC"] = "gcc"
+-  elsif platform.is_cross_compiled? || platform.is_solaris?
++  elsif settings[:use_pl_build_tools] && (platform.is_cross_compiled? || platform.is_solaris?)
+     rbconfig_changes["CC"] = "gcc"
+     rbconfig_changes["warnflags"] = "-Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wno-tautological-compare -Wno-parentheses-equality -Wno-constant-logical-operand -Wno-self-assign -Wunused-variable -Wimplicit-int -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wimplicit-function-declaration -Wdeprecated-declarations -Wno-packed-bitfield-compat -Wsuggest-attribute=noreturn -Wsuggest-attribute=format -Wno-maybe-uninitialized"
+     if platform.name =~ /el-7-ppc64/
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 505a655..07cc2ca 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -114,9 +114,13 @@ elsif platform.is_cross_compiled_linux? || (platform.is_solaris? && platform.arc
+   if platform.name =~ /solaris-10-sparc/
+     proj.setting(:host_ruby, "/opt/csw/bin/ruby")
+     proj.setting(:host_gem, "/opt/csw/bin/gem2.0")
+-  else
++  elsif settings[:use_pl_build_tools]
+     proj.setting(:host_ruby, "/opt/pl-build-tools/bin/ruby")
+     proj.setting(:host_gem, "/opt/pl-build-tools/bin/gem")
++  else
++    # Cross-compiled, but running Ruby under emulation.
++    proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby"))
++    proj.setting(:host_gem, File.join(proj.ruby_bindir, "gem"))
+   end
+ else
+   proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby"))
+-- 
+2.31.1
+

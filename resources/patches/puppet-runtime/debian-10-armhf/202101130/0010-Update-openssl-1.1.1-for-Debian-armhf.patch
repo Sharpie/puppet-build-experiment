@@ -1,0 +1,27 @@
+From 76d9191c71b13cffbbe59db19d5f03584f429920 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Tue, 25 Aug 2020 07:56:35 -0700
+Subject: [PATCH 10/12] Update openssl-1.1.1 for Debian armhf
+
+This commit generalizes the target selection in the Openssl config
+to accept any Debian version number instead of just Debian 8.
+---
+ configs/components/openssl-1.1.1.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/components/openssl-1.1.1.rb b/configs/components/openssl-1.1.1.rb
+index 015b46b..1400373 100644
+--- a/configs/components/openssl-1.1.1.rb
++++ b/configs/components/openssl-1.1.1.rb
+@@ -46,7 +46,7 @@ component 'openssl' do |pkg, settings, platform|
+ 
+     target = if platform.architecture == 'aarch64'
+                 'linux-aarch64'
+-              elsif platform.name =~ /debian-8-arm/
++              elsif platform.name =~ /debian-\d+-arm/
+                 'linux-armv4'
+               elsif platform.architecture =~ /ppc64le|ppc64el/ # Little-endian
+                 'linux-ppc64le'
+-- 
+2.31.1
+
