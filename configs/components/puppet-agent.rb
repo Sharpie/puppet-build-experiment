@@ -10,7 +10,7 @@ component 'puppet-agent' do |pkg, settings, platform|
   # downloading sources.
   pkg.environment('VANAGON_USE_MIRRORS', 'n')
 
-  unless Gem::Requirement.net('>= 6.21.0').satisfied_by?(settings[:version])
+  unless Gem::Requirement.new('>= 6.21.0').satisfied_by?(settings[:version])
     # Pull in patch to work around `-e local` being ignored during build:
     #   https://tickets.puppetlabs.com/browse/VANAGON-163
     pkg.environment('VANAGON_LOCATION', 'https://github.com/puppetlabs/vanagon.git#00fe427')
