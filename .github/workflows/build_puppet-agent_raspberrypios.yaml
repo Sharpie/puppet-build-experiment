@@ -30,10 +30,10 @@ jobs:
         run: |
           mkdir -p ~/.ssh
 
-          printf '%s' "${SSH_KEY}" > ~/.ssh/id_rsa-raspberry-builder
+          printf '%s\n' "${SSH_KEY}" > ~/.ssh/id_rsa-raspberry-builder
           chmod 0600 ~/.ssh/id_rsa-raspberry-builder
 
-          printf 'TF_VAR_ssh_pubkey=%s\n' "$(ssh-keygen -y -f ~/.ssh/id_rsa-raspberry-builder)" >> $GITHUB_ENV
+          printf 'TF_VAR_ssh_pubkey=%s' "$(ssh-keygen -y -f ~/.ssh/id_rsa-raspberry-builder)" >> $GITHUB_ENV
 
       - name: 'Provision build hardware'
         env:
