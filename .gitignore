@@ -4,6 +4,7 @@ Gemfile.lock
 Gemfile.local
 resources/bolt/.rerun.json
 resources/bolt/.task_cache.json
+resources/bolt/.plan_cache.json
 resources/bolt/bolt-debug.log
 output/
 vanagon_hosts.log

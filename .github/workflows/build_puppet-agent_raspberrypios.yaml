@@ -62,9 +62,8 @@ jobs:
         run: |
           cd resources/bolt
 
-          bolt task run raspbian_builder::configure_builder \
-            --target raspbian-builder \
-            --run-as root \
+          bolt plan run raspbian_builder::configure_builder \
+            targets=raspbian-builder \
             --stream --no-verbose
 
       - name: 'Wait as long as the file ${HOME}/pause file is present'
