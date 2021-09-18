@@ -40,6 +40,7 @@ jobs:
         run: |
           cd resources/terraform/aws
 
+          terraform init
           terraform apply -auto-approve
 
       - name: 'Wait as long as the file ${HOME}/pause file is present'
