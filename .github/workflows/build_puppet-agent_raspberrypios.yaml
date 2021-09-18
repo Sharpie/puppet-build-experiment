@@ -55,8 +55,9 @@ jobs:
         env:
           TF_VAR_aws_key_id: '${{ secrets.AWS_KEY_ID }}'
           TF_VAR_aws_key_secret: '${{ secrets.AWS_KEY_SECRET }}'
+          TF_VAR_aws_subnet_id: '${{ secrets.AWS_SUBNET_ID }}'
         run: |
-          cd resources/terraform/aws
+          cd resources/terraform/builder
 
           terraform init
           terraform apply -auto-approve
@@ -109,7 +110,8 @@ jobs:
         env:
           TF_VAR_aws_key_id: '${{ secrets.AWS_KEY_ID }}'
           TF_VAR_aws_key_secret: '${{ secrets.AWS_KEY_SECRET }}'
+          TF_VAR_aws_subnet_id: '${{ secrets.AWS_SUBNET_ID }}'
         run: |
-          cd resources/terraform/aws
+          cd resources/terraform/builder
 
           terraform apply -destroy -auto-approve

@@ -13,43 +13,26 @@ variable "aws_region" {
 }
 
 variable "aws_key_id" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "aws_key_secret" {
-  type = string
-}
-
-variable "ssh_pubkey" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 provider "aws" {
   region     = var.aws_region
   access_key = var.aws_key_id
   secret_key = var.aws_key_secret
-}
 
-data "aws_ami" "debian_10" {
-  owners = ["aws-marketplace"]
-  most_recent = true
-
-  # Debian 10 Buster (ARM)
-  #   https://wiki.debian.org/Cloud/AmazonEC2Image/Marketplace
-  #
-  # SSH username: admin
-  filter {
-    name = "product-code"
-    values = ["1qy7erf9xr4bmkgjdpdyezu4w"]
+  default_tags {
+    tags = {
+      Project = "puppet-agent-for-raspbian"
+    }
   }
 }
-
-resource "aws_key_pair" "puppet_agent_builder" {
-  key_name = "puppet-agent-builder"
-  public_key = var.ssh_pubkey
-}
-
-### Networking
 
 resource "aws_vpc" "raspbian_builder_vpc" {
   cidr_block           = "172.21.0.0/16"
@@ -92,18 +75,5 @@ resource "aws_default_security_group" "raspbian_builder_vpc_default_sg" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_instance" "raspbian_builder" {
-  ami           = data.aws_ami.debian_10.id
-  instance_type = "m6g.large"
-  key_name      = aws_key_pair.puppet_agent_builder.key_name
-  subnet_id     = aws_subnet.raspbian_builder_subnet.id
-  associate_public_ip_address = true
-
-  root_block_device {
-    delete_on_termination = true
-    volume_size = 32
   }
 }

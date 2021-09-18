@@ -6,5 +6,8 @@ resources/bolt/.rerun.json
 resources/bolt/.task_cache.json
 resources/bolt/.plan_cache.json
 resources/bolt/bolt-debug.log
+resources/terraform/*/.terraform
+resources/terraform/*/.terraform.lock.hcl
+resources/terraform/*/*.tfstate*
 output/
 vanagon_hosts.log
