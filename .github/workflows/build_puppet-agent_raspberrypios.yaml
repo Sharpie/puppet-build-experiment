@@ -3,10 +3,11 @@ name: "Build puppet-agent for Rasberry Pi OS"
 
 on:
   workflow_dispatch:
-    ssh-debugging:
-      description: 'Boolean; whether or not to pause for ssh debugging'
-      required: true
-      default: 'false'
+    inputs:
+      ssh-debugging:
+        description: 'Boolean; whether or not to pause for ssh debugging'
+        required: true
+        default: 'false'
 
 jobs:
   build:
