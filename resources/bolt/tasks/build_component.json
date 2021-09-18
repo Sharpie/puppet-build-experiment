@@ -1,0 +1,18 @@
+{
+  "description": "Build the puppet-agent package for Raspbian",
+  "input_method": "environment",
+  "parameters": {
+    "agent_version": {
+      "description": "Version of puppet-agent to build",
+      "type": "String[1]"
+    },
+    "project_version": {
+      "description": "Version of puppet-build-experiment repo to use",
+      "type": "Optional[String[1]]"
+    },
+    "component": {
+      "description": "Component of puppet-agent to build",
+      "type": "Enum[runtime,agent]"
+    }
+  }
+}

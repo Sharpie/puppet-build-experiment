@@ -1,0 +1,40 @@
+From 6a7c7fcc7f364a7c37a33869173da303aa5bae0b Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Sat, 18 Sep 2021 11:45:14 -0500
+Subject: [PATCH] Add platform definition for debian-10-armhf
+
+This commit adds a platform definition for native builds of
+puppet-agent 6.x on Raspberry Pi OS.
+
+The content of this commit is a backport of Mike Stahnke's work
+in:
+
+ https://github.com/puppetlabs/puppet-agent/pull/2055
+
+With some modifications to the packages installed as puppet-agent
+6.x has additional C++ components when compared to 7.x.
+---
+ configs/platforms/debian-10-armhf.rb | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+ create mode 100644 configs/platforms/debian-10-armhf.rb
+
+diff --git a/configs/platforms/debian-10-armhf.rb b/configs/platforms/debian-10-armhf.rb
+new file mode 100644
+index 000000000..b45cfd450
+--- /dev/null
++++ b/configs/platforms/debian-10-armhf.rb
+@@ -0,0 +1,11 @@
++platform "debian-10-armhf" do |plat|
++  plat.servicedir "/lib/systemd/system"
++  plat.defaultdir "/etc/default"
++  plat.servicetype "systemd"
++  plat.codename "buster"
++
++  packages = ['build-essential', 'devscripts', 'make', 'quilt', 'pkg-config', 'debhelper', 'rsync', 'fakeroot', 'cmake']
++  plat.provision_with "export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -qy --no-install-recommends #{packages.join(' ')}"
++  plat.install_build_dependencies_with "DEBIAN_FRONTEND=noninteractive; apt-get install -qy --no-install-recommends "
++  plat.vmpooler_template "debian-10-armhf"
++end
+-- 
+2.33.0
+

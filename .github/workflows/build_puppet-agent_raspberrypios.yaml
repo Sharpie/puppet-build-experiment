@@ -4,6 +4,9 @@ name: "Build puppet-agent for Rasberry Pi OS"
 on:
   workflow_dispatch:
     inputs:
+      agent-version:
+        description: 'Version of puppet-agent to build'
+        required: true
       ssh-debugging:
         description: 'Boolean; whether or not to pause for ssh debugging'
         required: true
@@ -64,6 +67,32 @@ jobs:
 
           bolt plan run raspbian_builder::configure_builder \
             targets=raspbian-builder \
+            --stream --no-verbose
+
+      - name: 'Build puppet-runtime'
+        env:
+          agent_version: '${{ github.event.inputs.agent-version }}'
+        run: |
+          cd resources/bolt
+
+          bolt task run raspbian_builder::build_component \
+            component=runtime \
+            agent_version="${agent_version}" \
+            project_version="${GITHUB_SHA}" \
+            --target raspbian-builder \
+            --stream --no-verbose
+
+      - name: 'Build puppet-agent'
+        env:
+          agent_version: '${{ github.event.inputs.agent-version }}'
+        run: |
+          cd resources/bolt
+
+          bolt task run raspbian_builder::build_component \
+            component=agent \
+            agent_version="${agent_version}" \
+            project_version="${GITHUB_SHA}" \
+            --target raspbian-builder \
             --stream --no-verbose
 
       - name: 'Wait as long as the file ${HOME}/pause file is present'
