@@ -1,0 +1,59 @@
+---
+name: "Build puppet-agent for Rasberry Pi OS"
+
+on:
+  workflow_dispatch:
+    ssh-debugging:
+      description: 'Boolean; whether or not to pause for ssh debugging'
+      required: true
+      default: 'false'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: 'Start SSH session'
+        if: ${{ github.event.inputs.ssh-debugging == 'true' }}
+        uses: luchihoratiu/debug-via-ssh@main
+        with:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+          SSH_PASS: ${{ secrets.SSH_PASS }}
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: 'Set up builder SSH key'
+        env:
+          SSH_KEY: '${{ secrets.SSH_KEY }}'
+        run: |
+          printf '%s' "${SSH_KEY}" > ~/.ssh/id_rsa-raspberry-builder
+          printf 'TF_VAR_ssh_key=%s' "$(ssh-keygen -y -f ~/.ssh/id_rsa-raspberry-builder)" >> $GITHUB_ENV
+
+      - name: 'Provision build hardware'
+        env:
+          TF_VAR_aws_key_id: '${{ secrets.AWS_KEY_ID }}'
+          TF_VAR_aws_key_secret: '${{ secrets.AWS_KEY_SECRET }}'
+        run: |
+          cd resources/terraform/aws
+
+          terraform apply -auto-approve
+
+      - name: 'Wait as long as the file ${HOME}/pause file is present'
+        if: ${{ always() && github.event.inputs.ssh-debugging == 'true' }}
+        run: |
+          while [ -f "${HOME}/pause" ] ; do
+            echo "${HOME}/pause present, sleeping for 60 seconds..."
+            sleep 60
+          done
+          echo "${HOME}/pause absent, continuing workflow."
+
+      - name: 'Destroy build hardware'
+        if: '${{ always() }}'
+        env:
+          TF_VAR_aws_key_id: '${{ secrets.AWS_KEY_ID }}'
+          TF_VAR_aws_key_secret: '${{ secrets.AWS_KEY_SECRET }}'
+        run: |
+          cd resources/terraform/aws
+
+          terraform apply -destroy -auto-approve
