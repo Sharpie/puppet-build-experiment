@@ -1,0 +1,16 @@
+groups:
+  - name: raspbian-builder
+
+    targets:
+      _plugin: terraform
+      dir: ../terraform/aws
+      resource_type: aws_instance
+      target_mapping:
+        uri: public_ip
+
+    config:
+      transport: ssh
+      ssh:
+        user: admin
+        private-key: '~/.ssh/id_rsa-raspberry-builder'
+        host-key-check: false

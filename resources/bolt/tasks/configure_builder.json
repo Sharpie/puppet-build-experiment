@@ -1,0 +1,4 @@
+{
+  "description": "Configure a Debian machine to build Raspbian packages",
+  "input_method": "environment"
+}
