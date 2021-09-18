@@ -27,8 +27,10 @@ jobs:
         env:
           SSH_KEY: '${{ secrets.SSH_KEY }}'
         run: |
+          mkdir -p ~/.ssh
+
           printf '%s' "${SSH_KEY}" > ~/.ssh/id_rsa-raspberry-builder
-          printf 'TF_VAR_ssh_key=%s' "$(ssh-keygen -y -f ~/.ssh/id_rsa-raspberry-builder)" >> $GITHUB_ENV
+          printf 'TF_VAR_ssh_pubkey=%s' "$(ssh-keygen -y -f ~/.ssh/id_rsa-raspberry-builder)" >> $GITHUB_ENV
 
       - name: 'Provision build hardware'
         env:
