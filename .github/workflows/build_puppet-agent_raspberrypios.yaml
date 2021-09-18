@@ -99,7 +99,9 @@ jobs:
         run: |
           builder_ip="$(cd resources/bolt && bolt inventory show --targets raspbian-builder --format json|jq -r '.inventory.targets[0]')"
 
-          scp -i ~/.ssh/id_rsa-raspberry-builder -r "admin@${builder_ip}:puppet-build-experiment/output" .
+          scp -i ~/.ssh/id_rsa-raspberry-builder \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -r "admin@${builder_ip}:puppet-build-experiment/output" .
 
       - name: 'Wait as long as the file ${HOME}/pause file is present'
         if: ${{ always() && github.event.inputs.ssh-debugging == 'true' }}
