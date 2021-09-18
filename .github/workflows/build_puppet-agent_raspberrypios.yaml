@@ -12,6 +12,9 @@ on:
         required: true
         default: 'false'
 
+env:
+  PUPPET_AGENT_VERSION: '${{ github.event.inputs.agent-version }}'
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -71,30 +74,32 @@ jobs:
             --stream --no-verbose
 
       - name: 'Build puppet-runtime'
-        env:
-          agent_version: '${{ github.event.inputs.agent-version }}'
         run: |
           cd resources/bolt
 
           bolt task run raspbian_builder::build_component \
             component=runtime \
-            agent_version="${agent_version}" \
+            agent_version="${PUPPET_AGENT_VERSION}" \
             project_version="${GITHUB_SHA}" \
             --target raspbian-builder \
             --stream --no-verbose
 
       - name: 'Build puppet-agent'
-        env:
-          agent_version: '${{ github.event.inputs.agent-version }}'
         run: |
           cd resources/bolt
 
           bolt task run raspbian_builder::build_component \
             component=agent \
-            agent_version="${agent_version}" \
+            agent_version="${PUPPET_AGENT_VERSION}" \
             project_version="${GITHUB_SHA}" \
             --target raspbian-builder \
             --stream --no-verbose
+
+      - name: 'Retrieve build artifacts'
+        run: |
+          builder_ip="$(cd resources/bolt && bolt inventory show --targets raspbian-builder --format json|jq -r '.inventory.targets[0]')"
+
+          scp -i ~/.ssh/id_rsa-raspberry-builder -r "admin@${builder_ip}:puppet-build-experiment/output" .
 
       - name: 'Wait as long as the file ${HOME}/pause file is present'
         if: ${{ always() && github.event.inputs.ssh-debugging == 'true' }}
@@ -115,3 +120,158 @@ jobs:
           cd resources/terraform/builder
 
           terraform apply -destroy -auto-approve
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vanagon-output.tar
+          path: output
+
+
+  test-puppet-agent:
+    runs-on: ubuntu-20.04
+    needs: build
+    env:
+      VANAGON_DOCKER_IMAGE: 'ghcr.io/sharpie/raspbian-10-armhf:latest'
+      TEST_REPO: 'https://github.com/puppetlabs/puppet-agent'
+      TEST_COMPONENT: puppet-agent
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.5'
+      - uses: actions/download-artifact@v2
+        with:
+          name: vanagon-output.tar
+          path: output
+      - name: Setup QEMU
+        run: |
+          sudo apt update
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_6.1+dfsg-5_amd64.deb'
+          sudo apt install -y ./qemu-user-static_6.1+dfsg-5_amd64.deb
+      - name: Provision test environment
+        run: |
+          gem install bundler
+          docker pull "${VANAGON_DOCKER_IMAGE}"
+
+          test_package=$(find "${GITHUB_WORKSPACE}/output" -type f -name 'puppet-agent_*.deb')
+          printf 'TEST_PUPPET_PACKAGE=%s\n' "${test_package}" >> "${GITHUB_ENV}"
+
+          test_version="${PUPPET_AGENT_VERSION}"
+          git clone "${TEST_REPO}" "${TEST_COMPONENT}"
+
+          cd "${TEST_COMPONENT}"
+          git checkout "${test_version}"
+
+          cd acceptance
+          printf 'gem "beaker-docker", "~> 0.7.0"\n' > Gemfile.local
+          bundle config set path '.bundle/lib'
+          bundle install
+
+          find .bundle -path '*/aio/010_Install_Puppet_Agent.rb' \
+            -exec cp "${GITHUB_WORKSPACE}/resources/test/puppet-agent/010_Install_Puppet_Agent.rb" {} \;
+      - name: Run acceptance test
+        run: |
+          export SHA="${PUPPET_AGENT_VERSION}"
+          export BEAKER_HOSTS="${GITHUB_WORKSPACE}/resources/test/puppet-agent/raspbian-10-armhf.yaml"
+
+          cd "${TEST_COMPONENT}/acceptance"
+
+
+          # Facter 4 tests should pass starting with version 6.18.0
+          facter4_tests_pass=$(printf '%s\n%s' "6.18.0" "${PUPPET_AGENT_VERSION}"|sort -V|head -n1)
+          if [[ $facter4_tests_pass != 6.18.0 ]]; then
+            # Filter test cases that are expected to fail.
+            #
+            # ensure_puppet_facts_can_use_facter_ng.rb: facter-ng doesn't know what to make of Raspbian
+            # ensure_facter_3_and_facter_4_output_matches.rb: facter-ng can't resolve networking facts
+            #   properly under Docker+QEMU.
+            export TESTS=$(find tests -type f \
+                             -not -path tests/ensure_puppet_facts_can_use_facter_ng.rb \
+                             -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
+                           | paste -s -d, -)
+          else
+            # Filter test cases that are expected to fail.
+            #
+            # ensure_facter_3_and_facter_4_output_matches.rb:
+            #   facter-ng prefers /etc/os-release and thus correctly reports
+            #   Raspbian. facter 3 sees /etc/debian_version and reports Debian.
+            export TESTS=$(find tests -type f \
+                             -not -path tests/ensure_facter_3_and_facter_4_output_matches.rb \
+                           | paste -s -d, -)
+          fi
+
+          bundle exec rake 'ci:test:aio[true]'
+
+
+  test-facter:
+    runs-on: ubuntu-20.04
+    needs: build
+    env:
+      VANAGON_DOCKER_IMAGE: 'ghcr.io/sharpie/raspbian-10-armhf:latest'
+      TEST_REPO: 'https://github.com/puppetlabs/facter'
+      TEST_COMPONENT: facter
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.5'
+      - uses: actions/download-artifact@v2
+        with:
+          name: vanagon-output.tar
+          path: output
+      - name: Setup QEMU
+        run: |
+          sudo apt update
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_6.1+dfsg-5_amd64.deb'
+          sudo apt install -y ./qemu-user-static_6.1+dfsg-5_amd64.deb
+      - name: Provision test environment
+        run: |
+          gem install bundler
+          docker pull "${VANAGON_DOCKER_IMAGE}"
+
+          test_package=$(find "${GITHUB_WORKSPACE}/output" -type f -name 'puppet-agent_*.deb')
+          printf 'TEST_PUPPET_PACKAGE=%s\n' "${test_package}" >> "${GITHUB_ENV}"
+
+          test_version=$(./scripts/component-version.sh puppet-agent "${PUPPET_AGENT_VERSION}" "${TEST_COMPONENT}")
+          git clone "${TEST_REPO}" "${TEST_COMPONENT}"
+
+          cd "${TEST_COMPONENT}"
+          git checkout "${test_version}"
+
+          cd acceptance
+          printf 'gem "beaker-docker", "~> 0.7.0"\n' > Gemfile.local
+          bundle config set path '.bundle/lib'
+          bundle install
+
+          find .bundle -path '*/aio/010_Install_Puppet_Agent.rb' \
+            -exec cp "${GITHUB_WORKSPACE}/resources/test/puppet-agent/010_Install_Puppet_Agent.rb" {} \;
+      - name: Run acceptance test
+        run: |
+          export SHA="${PUPPET_AGENT_VERSION}"
+          export BEAKER_HOSTS="${GITHUB_WORKSPACE}/resources/test/puppet-agent/raspbian-10-armhf.yaml"
+
+          cd "${TEST_COMPONENT}/acceptance"
+
+          # Filter test cases that are expected to fail.
+          #
+          # networking_facts: Networking is strange inside Docker
+          # os_processors_and_kernel: Does not expect ARM
+          # ruby: Does not expect ARM
+          export TESTS=$(find tests -type f \
+                         -not -path tests/facts/networking_facts.rb \
+                         -not -path tests/facts/os_processors_and_kernel.rb \
+                         -not -path tests/facts/ruby.rb | paste -s -d, -)
+
+          bundle exec rake 'ci:test:aio[true]'
