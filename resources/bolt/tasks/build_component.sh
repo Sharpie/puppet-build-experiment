@@ -14,7 +14,10 @@ if [[ ! -e puppet-build-experiment ]]; then
 
   pushd puppet-build-experiment
 
-  [[ -n "${PT_project_version}" ]] && git checkout "${PT_project_version}"
+  if [[ -n "${PT_project_version}" ]]; then
+    git fetch origin "${PT_project_version}"
+    git checkout "${PT_project_version}"
+  fi
 
   bundle config set path .bundle/lib
   bundle install
