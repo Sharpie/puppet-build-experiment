@@ -1,0 +1,41 @@
+From 362a109b1e5d9c8e58ce19d59344ff6628c63569 Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 20 Sep 2021 10:34:42 -0500
+Subject: [PATCH] Set host along with platform triple for armhf
+
+This commit updates the shared agent settings to pass the `armhf`
+platform triple to builds using the `--host` flag. This is important
+as a build run on faster ARM hardware, such as AWS gravaton, may
+end up with armv8l as the host architecture instead of the required
+`gnueabihf`.
+---
+ configs/projects/_shared-agent-settings.rb | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 7e45825..d6b82a0 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -99,10 +99,18 @@ platform_triple = "ppc64-redhat-linux" if platform.architecture == "ppc64"
+ platform_triple = "ppc64le-redhat-linux" if platform.architecture == "ppc64le"
+ platform_triple = "powerpc64le-suse-linux" if platform.architecture == "ppc64le" && platform.name =~ /^sles-/
+ platform_triple = "powerpc64le-linux-gnu" if platform.architecture == "ppc64el"
+-platform_triple = "arm-linux-gnueabihf" if platform.architecture == "armhf"
+ platform_triple = "arm-linux-gnueabi" if platform.name == 'debian-8-armel'
+ platform_triple = "aarch64-redhat-linux" if platform.name == 'el-7-aarch64'
+ 
++if platform.architecture == "armhf"
++  platform_triple = "arm-linux-gnueabihf"
++  # Set the host to ensure Ruby Gems work correctly when
++  # the build isn't run on a Raspberry Pi board. For example,
++  # AWS Gravaton is used to build because it is 6x faster
++  # than a RPi 4.
++  host = "--host #{platform_triple}"
++end
++
+ if platform.is_windows?
+   proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby.exe"))
+   proj.setting(:host_gem, File.join(proj.ruby_bindir, "gem.bat"))
+-- 
+2.33.0
+
