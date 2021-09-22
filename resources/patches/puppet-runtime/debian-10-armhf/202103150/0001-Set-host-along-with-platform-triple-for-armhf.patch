@@ -30,7 +30,7 @@ index 7e45825..d6b82a0 100644
 +  # the build isn't run on a Raspberry Pi board. For example,
 +  # AWS Gravaton is used to build because it is 6x faster
 +  # than a RPi 4.
-+  host = "--host #{platform_triple}"
++  host = "--host #{platform_triple} --target #{platform_triple}"
 +end
 +
  if platform.is_windows?
