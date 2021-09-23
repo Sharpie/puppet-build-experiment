@@ -1,0 +1,50 @@
+From fdde5114dfa997ce9f32b9dcc31561a5ed9a9eee Mon Sep 17 00:00:00 2001
+From: Charlie Sharpsteen <source@sharpsteen.net>
+Date: Mon, 20 Sep 2021 10:34:42 -0500
+Subject: [PATCH] Set host along with platform triple for armhf
+
+This commit updates the shared agent settings to pass the `armhf`
+platform triple to builds using the `--host` flag. This is important
+as a build run on faster ARM hardware, such as AWS gravaton, may
+end up with armv8l as the host architecture instead of the required
+`gnueabihf`.
+---
+ configs/projects/_shared-agent-settings.rb | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/configs/projects/_shared-agent-settings.rb b/configs/projects/_shared-agent-settings.rb
+index 7e45825..c0812e5 100644
+--- a/configs/projects/_shared-agent-settings.rb
++++ b/configs/projects/_shared-agent-settings.rb
+@@ -99,10 +99,27 @@ platform_triple = "ppc64-redhat-linux" if platform.architecture == "ppc64"
+ platform_triple = "ppc64le-redhat-linux" if platform.architecture == "ppc64le"
+ platform_triple = "powerpc64le-suse-linux" if platform.architecture == "ppc64le" && platform.name =~ /^sles-/
+ platform_triple = "powerpc64le-linux-gnu" if platform.architecture == "ppc64el"
+-platform_triple = "arm-linux-gnueabihf" if platform.architecture == "armhf"
+ platform_triple = "arm-linux-gnueabi" if platform.name == 'debian-8-armel'
+ platform_triple = "aarch64-redhat-linux" if platform.name == 'el-7-aarch64'
+ 
++if platform.architecture == "armhf"
++  platform_triple = "arm-linux-gnueabihf"
++  # Both the host and target flags are required to ensure config.rb
++  # is properly populated if puppet-runtime is cross-compiled or
++  # compiled on a platform that isn't RPi hardware.
++  #
++  # For example, a Raspberry Pi OS Docke image running on an
++  # AWS gravaton instance that compiles 4x faster than a RPi 4 b+.
++  #
++  # If these flags are not passed, the resulting ruby binary
++  # produces "Ignoring xxx because its extensions are not built"
++  # errors when trying to load gems with compiled extensions.
++  #
++  # This peculiarity in the Ruby build system appears to only
++  # affect the arm-linux-gnueabihf target.
++  host = "--host #{platform_triple} --target #{platform_triple}"
++end
++
+ if platform.is_windows?
+   proj.setting(:host_ruby, File.join(proj.ruby_bindir, "ruby.exe"))
+   proj.setting(:host_gem, File.join(proj.ruby_bindir, "gem.bat"))
+-- 
+2.33.0
+
