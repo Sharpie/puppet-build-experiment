@@ -143,7 +143,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '2.5'
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: vanagon-output.tar
           path: output
@@ -225,7 +225,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '2.5'
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: vanagon-output.tar
           path: output
